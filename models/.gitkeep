@@ -1,0 +1,26 @@
+# Models Directory
+
+This directory contains the AI models used by Steno.
+
+## Model Files
+
+The following model files should be placed in this directory:
+- `ggml-large-v3.bin` - Whisper Large v3 model (3GB)
+
+## Download Instructions
+
+Download the model from:
+https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
+
+Or use:
+```bash
+curl -L -o models/ggml-large-v3.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
+```
+
+## Model Info
+
+- **Model**: OpenAI Whisper Large v3
+- **Size**: ~3GB
+- **Format**: GGML quantized
+- **Supported Languages**: 100+ languages including Chinese and English
+- **Performance**: Best accuracy, moderate speed

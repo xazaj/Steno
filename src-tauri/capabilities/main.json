@@ -1,0 +1,26 @@
+{
+  "$schema": "https://beta.tauri.app/schema/capabilities.json",
+  "identifier": "main-capability",
+  "description": "Main application capabilities",
+  "windows": ["main"],
+  "permissions": [
+    "core:path:default",
+    "core:event:default",
+    "core:window:default",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize", 
+    "core:window:allow-close",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-position",
+    "core:window:allow-inner-position",
+    "core:window:allow-outer-position",
+    "core:app:default",
+    "core:resources:default", 
+    "core:menu:default",
+    "core:tray:default",
+    "dialog:default",
+    "opener:default",
+    "fs:allow-write-text-file"
+  ]
+} 

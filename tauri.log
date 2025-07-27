@@ -1,0 +1,165 @@
+
+> steno@0.1.0 tauri
+> tauri dev
+
+     Running BeforeDevCommand (`npm run dev`)
+
+> steno@0.1.0 dev
+> vite
+
+
+  VITE v6.3.5  ready in 85 ms
+
+  ➜  Local:   http://localhost:1420/
+     Running DevCommand (`cargo  run --no-default-features --color always --`)
+        Info Watching /Users/zhuaijun/Work-space/Steno/steno/src-tauri for changes...
+[0m[1m[33mwarning[0m[0m[1m: unused import: `std::time::Duration`[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msrc/audio_devices.rs:418:9[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m418[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    use std::time::Duration;[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `#[warn(unused_imports)]` on by default[0m
+
+[0m[1m[33mwarning[0m[0m[1m: value assigned to `result` is never read[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msrc/context_processor.rs:374:17[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m374[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m        let mut result = text.to_string();[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                 [0m[0m[1m[33m^^^^^^[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mhelp[0m[0m: maybe it is overwritten before being read?[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `#[warn(unused_assignments)]` on by default[0m
+
+[0m[1m[33mwarning[0m[0m[1m: unused variable: `duration`[0m
+[0m    [0m[0m[1m[38;5;12m--> [0m[0msrc/lib.rs:1975:9[0m
+[0m     [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m1975[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m    let duration = audio_data.len() as f32 / 16000.0;[0m
+[0m     [0m[0m[1m[38;5;12m|[0m[0m         [0m[0m[1m[33m^^^^^^^^[0m[0m [0m[0m[1m[33mhelp: if this is intentional, prefix it with an underscore: `_duration`[0m
+[0m     [0m[0m[1m[38;5;12m|[0m
+[0m     [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `#[warn(unused_variables)]` on by default[0m
+
+[0m[1m[33mwarning[0m[0m[1m: hiding a lifetime that's elided elsewhere is confusing[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msrc/realtime_audio_full.rs:965:17[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m965[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;12m...[0m[0mck(&self) -> Result<std::sync::MutexGuard<Option<RealtimeAudioCapture>>, std::sync::PoisonError<std::sync::MutexGuard<Option<RealtimeAudioCapture>>>> {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m       [0m[0m[1m[33m^^^^^[0m[0m            [0m[0m[1m[38;5;12m---------------------------------------------------[0m[0m                         [0m[0m[1m[38;5;12m---------------------------------------------------[0m[0m [0m[0m[1m[38;5;12mthe same lifetime is hidden here[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m       [0m[0m[1m[33m|[0m[0m                [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m       [0m[0m[1m[33m|[0m[0m                [0m[0m[1m[38;5;12mthe same lifetime is hidden here[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m       [0m[0m[1m[33mthe lifetime is elided here[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mhelp[0m[0m: the same lifetime is referred to in inconsistent ways, making the signature confusing[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `#[warn(mismatched_lifetime_syntaxes)]` on by default[0m
+[0m[1m[38;5;14mhelp[0m[0m: use `'_` for type paths[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m965[0m[0m [0m[0m[1m[38;5;12m| [0m[0m    pub fn lock(&self) -> Result<std::sync::MutexGuard<[0m[0m[38;5;10m'_, [0m[0mOption<RealtimeAudioCapture>>, std::sync::PoisonError<std::sync::MutexGuard<[0m[0m[38;5;10m'_, [0m[0mOption<RealtimeAudioCapture>>>> {[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m                                                        [0m[0m[38;5;10m+++[0m[0m                                                                             [0m[0m[38;5;10m+++[0m
+
+[0m[1m[33mwarning[0m[0m[1m: creating a shared reference to mutable static[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msrc/audio_devices.rs:746:13[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m746[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m            GLOBAL_INPUT_DEVICE.clone()[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m             [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m [0m[0m[1m[33mshared reference to mutable static[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: `#[warn(static_mut_refs)]` on by default[0m
+
+[0m[1m[33mwarning[0m[0m[1m: creating a shared reference to mutable static[0m
+[0m   [0m[0m[1m[38;5;12m--> [0m[0msrc/audio_devices.rs:748:13[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m[1m[38;5;12m748[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0m            GLOBAL_OUTPUT_DEVICE.clone()[0m
+[0m    [0m[0m[1m[38;5;12m|[0m[0m             [0m[0m[1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m [0m[0m[1m[33mshared reference to mutable static[0m
+[0m    [0m[0m[1m[38;5;12m|[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>[0m
+[0m    [0m[0m[1m[38;5;12m= [0m[0m[1mnote[0m[0m: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives[0m
+
+[1m[33mwarning[0m[1m:[0m `steno` (lib) generated 6 warnings (run `cargo fix --lib -p steno` to apply 1 suggestion)
+[1m[32m    Finished[0m ]8;;https://doc.rust-lang.org/cargo/reference/profiles.html#default-profiles\`dev` profile [unoptimized + debuginfo]]8;;\ target(s) in 0.44s
+[1m[32m     Running[0m `target/debug/steno`
+whisper_init_from_file_with_params_no_state: loading model from '/Users/zhuaijun/Work-space/Steno/steno/models/ggml-large-v3.bin'
+whisper_init_with_params_no_state: use gpu    = 1
+whisper_init_with_params_no_state: flash attn = 0
+whisper_init_with_params_no_state: gpu_device = 0
+whisper_init_with_params_no_state: dtw        = 0
+whisper_init_with_params_no_state: devices    = 3
+whisper_init_with_params_no_state: backends   = 3
+whisper_model_load: loading model
+whisper_model_load: n_vocab       = 51866
+whisper_model_load: n_audio_ctx   = 1500
+whisper_model_load: n_audio_state = 1280
+whisper_model_load: n_audio_head  = 20
+whisper_model_load: n_audio_layer = 32
+whisper_model_load: n_text_ctx    = 448
+whisper_model_load: n_text_state  = 1280
+whisper_model_load: n_text_head   = 20
+whisper_model_load: n_text_layer  = 32
+whisper_model_load: n_mels        = 128
+whisper_model_load: ftype         = 1
+whisper_model_load: qntvr         = 0
+whisper_model_load: type          = 5 (large v3)
+whisper_model_load: adding 1609 extra tokens
+whisper_model_load: n_langs       = 100
+whisper_model_load:        Metal total size =  3094.36 MB
+whisper_model_load: model size    = 3094.36 MB
+whisper_backend_init_gpu: using Metal backend
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M1
+ggml_metal_init: picking default device: Apple M1
+ggml_metal_load_library: using embedded metal library
+ggml_metal_init: GPU name:   Apple M1
+ggml_metal_init: GPU family: MTLGPUFamilyApple7  (1007)
+ggml_metal_init: GPU family: MTLGPUFamilyCommon3 (3003)
+ggml_metal_init: GPU family: MTLGPUFamilyMetal3  (5001)
+ggml_metal_init: simdgroup reduction   = true
+ggml_metal_init: simdgroup matrix mul. = true
+ggml_metal_init: has residency sets    = true
+ggml_metal_init: has bfloat            = true
+ggml_metal_init: use bfloat            = false
+ggml_metal_init: hasUnifiedMemory      = true
+ggml_metal_init: recommendedMaxWorkingSetSize  = 11453.25 MB
+ggml_metal_init: skipping kernel_get_rows_bf16                     (not supported)
+ggml_metal_init: skipping kernel_set_rows_bf16                     (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32                   (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_c4                (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_1row              (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_l4                (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_bf16                  (not supported)
+ggml_metal_init: skipping kernel_mul_mv_id_bf16_f32                (not supported)
+ggml_metal_init: skipping kernel_mul_mm_bf16_f32                   (not supported)
+ggml_metal_init: skipping kernel_mul_mm_id_bf16_f16                (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h64           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h80           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h96           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h112          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h128          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h192          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_hk192_hv128   (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h256          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_hk576_hv512   (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h64       (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h96       (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h128      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h192      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_hk192_hv128 (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h256      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_hk576_hv512 (not supported)
+ggml_metal_init: skipping kernel_cpy_f32_bf16                      (not supported)
+ggml_metal_init: skipping kernel_cpy_bf16_f32                      (not supported)
+ggml_metal_init: skipping kernel_cpy_bf16_bf16                     (not supported)
+whisper_backend_init: using BLAS backend
+whisper_init_state: kv self size  =   83.89 MB
+whisper_init_state: kv cross size =  251.66 MB
+whisper_init_state: kv pad  size  =    7.86 MB
+whisper_init_state: compute buffer (conv)   =   37.69 MB
+whisper_init_state: compute buffer (encode) =  212.31 MB
+whisper_init_state: compute buffer (cross)  =    9.27 MB
+whisper_init_state: compute buffer (decode) =  100.04 MB
+4:03:55 PM [vite] (client) hmr update /src/components/PromptManager.tsx, /src/index.css
+4:10:42 PM [vite] (client) hmr update /src/components/wizard/CoreDescriptionStep.tsx, /src/index.css
+4:14:15 PM [vite] (client) hmr update /src/components/wizard/WizardNavigation.tsx, /src/index.css
+2025-07-27 16:18:14.836 steno[62051:6665348] TSM AdjustCapsLockLEDForKeyTransitionHandling - _ISSetPhysicalKeyboardCapsLockLED Inhibit
+4:25:29 PM [vite] (client) hmr update /src/components/wizard/CoreDescriptionStep.tsx, /src/index.css
+4:31:38 PM [vite] (client) hmr update /src/components/wizard/CoreDescriptionStep.tsx, /src/index.css
+4:35:44 PM [vite] (client) hmr update /src/components/wizard/VocabularyFactoryStep.tsx, /src/index.css
+4:44:01 PM [vite] (client) hmr update /src/components/wizard/VocabularyFactoryStep.tsx, /src/index.css
+4:48:38 PM [vite] (client) hmr update /src/components/wizard/FormatTemplateStep.tsx, /src/index.css

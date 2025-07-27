@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 麦克风访问权限 -->
+    <key>com.apple.security.device.microphone</key>
+    <true/>
+    
+    <!-- 音频输入权限 -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+    
+    <!-- 网络客户端权限（如果需要） -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    
+    <!-- 文件系统访问权限 -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    
+    <!-- 应用沙盒 -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    
+    <!-- 窗口管理权限 -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+    
+    <!-- 允许与其他应用程序交互 -->
+    <key>com.apple.security.temporary-exception.apple-events</key>
+    <array>
+        <string>com.apple.systemevents</string>
+        <string>com.apple.finder</string>
+    </array>
+    
+    <!-- 麦克风使用说明 -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Steno 需要访问麦克风来进行实时语音识别和录音转录功能。</string>
+</dict>
+</plist>

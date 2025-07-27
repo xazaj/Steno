@@ -1,0 +1,65 @@
+[package]
+name = "steno"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+default-run = "steno"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "steno_lib"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "steno"
+path = "src/main.rs"
+
+[[bin]]
+name = "audio_test"
+path = "src/audio_test.rs"
+
+[build-dependencies]
+cc = "1.0"
+bindgen = "0.69"
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2.0.0-beta", features = [ "macos-private-api", "unstable"] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-os = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hound = "3.5"
+symphonia = { version = "0.5", features = ["all", "aac", "mp3", "isomp4"] }
+rubato = "0.15"
+tokio = { version = "1", features = ["full"] }
+mp3-duration = "0.1"
+# 文本处理
+regex = "1.0"
+# 音频处理优化
+rustfft = "6.1"
+# VAD语音活动检测
+webrtc-vad = "0.4"
+# 并行处理
+rayon = "1.8"
+# 音频特征提取
+dasp = "0.11"
+# 数据持久化
+rusqlite = { version = "0.31", features = ["bundled", "chrono"] }
+chrono = { version = "0.4", features = ["serde"] }
+# 长音频处理
+lazy_static = "1.4"
+num_cpus = "1.16"
+# 实时音频捕获
+cpal = "0.15"
+# HTTP客户端用于模型下载
+reqwest = { version = "0.11", features = ["stream"] }
+futures-util = "0.3"
+# 系统目录获取
+dirs = "5.0"
+

@@ -1,0 +1,65 @@
+# Steno - AI语音识别应用
+# 基于 Tauri 2.0 + React + TypeScript + Rust + whisper.cpp
+
+# =============================================================================
+# Tauri Application
+# =============================================================================
+
+# Tauri build artifacts and generated files
+src-tauri/target/
+src-tauri/gen/
+src-tauri/bundle/
+
+# macOS-specific files (not needed for Windows build)
+src-tauri/build.rs
+src-tauri/entitlements.plist
+src-tauri/Info.plist
+
+# =============================================================================
+# Node.js / Frontend
+# =============================================================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+doc/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Package manager lockfiles (keep package-lock.json for consistency)
+yarn.lock
+pnpm-lock.yaml
+
+# AI Model files (不打包到发布版本)
+models/
+models/*.bin
+models/*.ggml
+models/*.pt
+models/*.pth
+
+# Documentation files (不打包到发布版本)
+docs/
+
+# Development tools (不打包到发布版本)
+.claude/
+
+# =============================================================================
+# Rust / Backend
+# =============================================================================

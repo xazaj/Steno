@@ -1,0 +1,3 @@
+[submodule "src-tauri/lib/whisper.cpp"]
+	path = src-tauri/lib/whisper.cpp
+	url = https://github.com/ggerganov/whisper.cpp.git
