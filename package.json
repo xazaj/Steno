@@ -14,7 +14,11 @@
     "build:mac-m1": "tauri build --target aarch64-apple-darwin",
     "build:mac-intel": "tauri build --target x86_64-apple-darwin",
     "build:windows": "tauri build --target x86_64-pc-windows-msvc", 
-    "build:release": "tauri build"
+    "build:release": "tauri build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",

@@ -1,0 +1,34 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "your-username" # Replace with your GitHub username
+    assignees:
+      - "your-username" # Replace with your GitHub username
+
+  # Enable version updates for Cargo
+  - package-ecosystem: "cargo"
+    directory: "/src-tauri"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "your-username" # Replace with your GitHub username
+    assignees:
+      - "your-username" # Replace with your GitHub username
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "your-username" # Replace with your GitHub username
+    assignees:
+      - "your-username" # Replace with your GitHub username
