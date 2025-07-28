@@ -1,5 +1,6 @@
 use std::env;
 use std::path::PathBuf;
+use std::fs;
 
 fn main() {
     let whisper_cpp_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -9,6 +10,12 @@ fn main() {
     let ggml_lib_path = whisper_cpp_path.join("build").join("ggml").join("src");
     let ggml_blas_path = ggml_lib_path.join("ggml-blas");
     let ggml_metal_path = ggml_lib_path.join("ggml-metal");
+    
+    // Check if essential library files exist
+    let whisper_static_lib = whisper_lib_path.join("libwhisper.a");
+    if !whisper_static_lib.exists() {
+        panic!("Whisper static library not found at: {}. Please build whisper.cpp first using: cd src-tauri/lib/whisper.cpp && mkdir -p build && cd build && cmake .. && cmake --build . --config Release", whisper_static_lib.display());
+    }
 
     println!(
         "cargo:rustc-link-search=native={}",
@@ -46,9 +53,17 @@ fn main() {
         "cargo:rerun-if-changed={}/libwhisper.a",
         whisper_lib_path.display()
     );
+    println!("cargo:rerun-if-changed={}", whisper_cpp_path.join("CMakeLists.txt").display());
+    println!("cargo:rerun-if-changed={}", whisper_cpp_path.join("src").join("whisper.cpp").display());
 
     // --- FFI 绑定生成 ---
     let header_path = whisper_cpp_path.join("include").join("whisper.h");
+    
+    // Check if header file exists
+    if !header_path.exists() {
+        panic!("Whisper header file not found at: {}. Please ensure git submodules are initialized and whisper.cpp is built.", header_path.display());
+    }
+    
     println!("cargo:rerun-if-changed={}", header_path.display());
 
     let bindings = bindgen::Builder::default()
@@ -66,7 +81,7 @@ fn main() {
         .allowlist_var("WHISPER_.*")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
-        .expect("无法生成绑定");
+        .expect("Unable to generate bindings for whisper.cpp. Please ensure the library is properly built.");
 
     // 将绑定写入 $OUT_DIR/bindings.rs
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());

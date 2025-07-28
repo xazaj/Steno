@@ -14,6 +14,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -29,11 +32,25 @@ jobs:
       with:
         targets: x86_64-pc-windows-msvc
 
-    - name: Install Tauri dependencies (Windows)
+    - name: Install build dependencies (Windows)
       run: |
         # Install WebView2
         Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "MicrosoftEdgeWebview2Setup.exe"
         Start-Process -FilePath "MicrosoftEdgeWebview2Setup.exe" -ArgumentList "/silent /install" -Wait
+        # Install CMake
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        # Install Visual Studio Build Tools
+        choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools"
+        refreshenv
+
+    - name: Build whisper.cpp library (Windows)
+      run: |
+        cd src-tauri/lib/whisper.cpp
+        mkdir build -ErrorAction SilentlyContinue
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --config Release
+      shell: powershell
 
     - name: Build Tauri app for Windows
       run: npm run build:windows
@@ -55,6 +72,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -69,6 +89,18 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+    - name: Install build dependencies (macOS)
+      run: |
+        brew install cmake
+
+    - name: Build whisper.cpp library (macOS)
+      run: |
+        cd src-tauri/lib/whisper.cpp
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --config Release
 
     - name: Build Tauri app for macOS
       run: npm run tauri:build
