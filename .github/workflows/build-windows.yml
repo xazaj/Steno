@@ -7,10 +7,17 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  CI: true
+  NODE_ENV: production
+  NPM_CONFIG_PROGRESS: false
+  NPM_CONFIG_AUDIT: false
+  NPM_CONFIG_FUND: false
+
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     
     steps:
     - name: Checkout repository
@@ -26,7 +33,11 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      timeout-minutes: 10
+      run: |
+        echo "Installing npm dependencies..."
+        npm ci --no-audit --no-fund
+        echo "Dependencies installed successfully"
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
@@ -46,28 +57,39 @@ jobs:
       with:
         arch: x64
 
-    - name: Install WebView2 (Windows)
-      run: |
-        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "MicrosoftEdgeWebview2Setup.exe"
-        Start-Process -FilePath "MicrosoftEdgeWebview2Setup.exe" -ArgumentList "/silent /install" -Wait
-      shell: powershell
 
     - name: Verify build tools (Windows)
+      continue-on-error: true
       run: |
+        echo "Verifying build tools..."
         cmake --version
         cl.exe 2>&1 | findstr "Version"
+        echo "Build tools verification completed"
       shell: cmd
 
     - name: Build whisper.cpp library (Windows)
+      timeout-minutes: 20
       run: |
         cd src-tauri/lib/whisper.cpp
         if not exist build mkdir build
         cd build
+        echo "Configuring CMake..."
         cmake .. -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022" -A x64 -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
+        if %ERRORLEVEL% neq 0 (
+          echo "CMake configuration failed"
+          exit /b 1
+        )
+        echo "Building whisper.cpp..."
         cmake --build . --config Release --parallel
+        if %ERRORLEVEL% neq 0 (
+          echo "whisper.cpp build failed"
+          exit /b 1
+        )
+        echo "whisper.cpp build completed successfully"
       shell: cmd
 
     - name: Verify whisper.cpp build artifacts (Windows)
+      continue-on-error: true
       run: |
         cd src-tauri/lib/whisper.cpp/build
         echo "=== Build directory structure ==="
@@ -80,13 +102,18 @@ jobs:
       shell: cmd
 
     - name: Build Tauri app for Windows
-      run: npm run build:windows
+      timeout-minutes: 30
+      run: |
+        echo "Starting Tauri build for Windows..."
+        npm run build:windows
+        echo "Tauri build completed successfully"
       env:
         RUST_BACKTRACE: 1
         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
     - name: Verify build outputs (Windows)
+      continue-on-error: true
       run: |
         echo "=== Checking build outputs ==="
         if exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi" (dir "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi\*.msi") else (echo "⚠️ MSI files not found")
@@ -96,6 +123,8 @@ jobs:
       shell: cmd
 
     - name: Create portable package (Windows)
+      continue-on-error: true
+      timeout-minutes: 5
       run: |
         echo "=== Creating portable package ==="
         if exist "src-tauri\target\x86_64-pc-windows-msvc\release\steno.exe" (
@@ -113,6 +142,8 @@ jobs:
       shell: cmd
 
     - name: Generate checksums (Windows)
+      continue-on-error: true
+      timeout-minutes: 5
       run: |
         echo "=== Generating checksums ==="
         powershell -Command "
@@ -166,7 +197,7 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable

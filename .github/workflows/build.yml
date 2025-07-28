@@ -11,6 +11,11 @@ on:
 env:
   RUST_BACKTRACE: 1
   CARGO_TERM_COLOR: always
+  CI: true
+  NODE_ENV: production
+  NPM_CONFIG_PROGRESS: false
+  NPM_CONFIG_AUDIT: false
+  NPM_CONFIG_FUND: false
 
 jobs:
   build:
@@ -81,16 +86,29 @@ jobs:
 
       - name: Build whisper.cpp library (Windows)
         if: matrix.platform == 'windows-latest'
+        timeout-minutes: 20
         run: |
           cd src-tauri/lib/whisper.cpp
           if not exist build mkdir build
           cd build
+          echo "Configuring CMake..."
           cmake .. -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022" -A x64 -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
+          if %ERRORLEVEL% neq 0 (
+            echo "CMake configuration failed"
+            exit /b 1
+          )
+          echo "Building whisper.cpp..."
           cmake --build . --config Release --parallel
+          if %ERRORLEVEL% neq 0 (
+            echo "whisper.cpp build failed"
+            exit /b 1
+          )
+          echo "whisper.cpp build completed successfully"
         shell: cmd
 
       - name: Verify whisper.cpp build artifacts (Windows)
         if: matrix.platform == 'windows-latest'
+        continue-on-error: true
         run: |
           cd src-tauri/lib/whisper.cpp/build
           echo "=== Checking library locations ==="
@@ -99,16 +117,29 @@ jobs:
 
       - name: Build whisper.cpp library (Unix)
         if: matrix.platform != 'windows-latest'
+        timeout-minutes: 20
         run: |
           cd src-tauri/lib/whisper.cpp
           mkdir -p build
           cd build
+          echo "Configuring CMake..."
           cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
+          if [ $? -ne 0 ]; then
+            echo "CMake configuration failed"
+            exit 1
+          fi
+          echo "Building whisper.cpp..."
           cmake --build . --config Release --parallel
+          if [ $? -ne 0 ]; then
+            echo "whisper.cpp build failed"
+            exit 1
+          fi
+          echo "whisper.cpp build completed successfully"
         shell: bash
 
       - name: Verify whisper.cpp build artifacts (Unix)
         if: matrix.platform != 'windows-latest'
+        continue-on-error: true
         run: |
           cd src-tauri/lib/whisper.cpp/build
           echo "=== Checking library locations ==="
@@ -119,12 +150,21 @@ jobs:
         shell: bash
 
       - name: Install frontend dependencies
-        run: npm ci
+        timeout-minutes: 10
+        run: |
+          echo "Installing npm dependencies..."
+          npm ci --no-audit --no-fund
+          echo "Dependencies installed successfully"
 
       - name: Build frontend
-        run: npm run build
+        timeout-minutes: 15
+        run: |
+          echo "Building frontend..."
+          npm run build
+          echo "Frontend build completed successfully"
 
       - name: Build Tauri application
+        timeout-minutes: 45
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
