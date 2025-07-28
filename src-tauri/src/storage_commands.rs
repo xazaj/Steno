@@ -29,37 +29,88 @@ impl StorageState {
         }
     }
     
-    /// 安全的存储访问，如果未初始化则尝试自动初始化
-    pub fn with_storage_auto_init<F, R>(&self, app_handle: &AppHandle, f: F) -> Result<R, String>
+    /// 可靠的存储访问 - 统一跨平台自动初始化逻辑
+    pub fn with_storage_reliable<F, R>(&self, app_handle: &AppHandle, mut f: F) -> Result<R, String>
     where
-        F: FnOnce(&StorageService) -> rusqlite::Result<R>,
+        F: FnMut(&StorageService) -> rusqlite::Result<R>,
     {
-        let mut state = self.0.lock().unwrap();
-        match state.as_ref() {
-            Some(_storage) => {
-                drop(state); // 释放锁
-                self.with_storage(f)
-            },
-            None => {
-                // 尝试自动初始化
-                log::warn!("⚠️ 存储服务未初始化，尝试自动初始化...");
-                println!("⚠️ 存储服务未初始化，尝试自动初始化...");
-                match crate::storage::StorageService::new(app_handle) {
-                    Ok(storage) => {
-                        *state = Some(storage);
-                        drop(state); // 释放锁
-                        log::info!("✅ 存储服务自动初始化成功");
-                        println!("✅ 存储服务自动初始化成功");
-                        self.with_storage(f)
-                    },
-                    Err(e) => {
-                        log::error!("❌ 存储服务自动初始化失败: {}", e);
-                        eprintln!("❌ 存储服务自动初始化失败: {}", e);
-                        Err(format!("Storage auto-initialization failed: {}", e))
+        // 第一次尝试：检查是否已初始化
+        {
+            let state = self.0.lock().unwrap();
+            if let Some(storage) = state.as_ref() {
+                match f(storage) {
+                    Ok(result) => return Ok(result),
+                    Err(e) => return Err(format!("Storage error: {}", e)),
+                }
+            }
+        }
+        
+        // 自动重新初始化（跨平台统一逻辑）
+        log::warn!("🔄 存储未初始化，尝试自动初始化...");
+        println!("🔄 存储未初始化，尝试自动初始化...");
+        
+        // 使用重试机制确保初始化成功
+        for attempt in 1..=3 {
+            match self.init_with_retry(app_handle, attempt) {
+                Ok(_) => {
+                    log::info!("✅ 存储服务自动初始化成功 (尝试 {})", attempt);
+                    println!("✅ 存储服务自动初始化成功 (尝试 {})", attempt);
+                    
+                    // 第二次尝试执行操作
+                    let state = self.0.lock().unwrap();
+                    if let Some(storage) = state.as_ref() {
+                        match f(storage) {
+                            Ok(result) => return Ok(result),
+                            Err(e) => return Err(format!("Storage error: {}", e)),
+                        }
+                    } else {
+                        return Err("Storage still not initialized after successful init".to_string());
+                    }
+                },
+                Err(e) => {
+                    if attempt == 3 {
+                        log::error!("❌ 存储服务初始化最终失败: {}", e);
+                        eprintln!("❌ 存储服务初始化最终失败: {}", e);
+                        return Err(format!("Storage initialization failed after {} attempts: {}", attempt, e));
+                    } else {
+                        log::warn!("⚠️ 存储服务初始化失败 (尝试 {}/3): {}", attempt, e);
+                        // 短暂等待后重试
+                        std::thread::sleep(std::time::Duration::from_millis(100 * attempt as u64));
                     }
                 }
             }
         }
+        
+        Err("Storage initialization failed after all retry attempts".to_string())
+    }
+    
+    /// 带重试机制的初始化
+    fn init_with_retry(&self, app_handle: &AppHandle, attempt: u32) -> Result<(), String> {
+        let mut state = self.0.lock().unwrap();
+        
+        // 如果已经初始化了，直接返回成功
+        if state.is_some() {
+            return Ok(());
+        }
+        
+        match crate::storage::StorageService::new(app_handle) {
+            Ok(storage) => {
+                *state = Some(storage);
+                Ok(())
+            },
+            Err(e) => {
+                Err(format!("Attempt {}: {}", attempt, e))
+            }
+        }
+    }
+    
+    /// 安全的存储访问，如果未初始化则尝试自动初始化（保持向后兼容）
+    pub fn with_storage_auto_init<F, R>(&self, app_handle: &AppHandle, f: F) -> Result<R, String>
+    where
+        F: FnMut(&StorageService) -> rusqlite::Result<R>,
+    {
+        // 委托给新的可靠方法
+        self.with_storage_reliable(app_handle, f)
     }
 }
 
@@ -92,7 +143,7 @@ pub async fn get_all_transcription_records(
     app_handle: AppHandle,
     storage_state: State<'_, StorageState>,
 ) -> Result<Vec<TranscriptionRecord>, String> {
-    storage_state.with_storage_auto_init(&app_handle, |storage| storage.get_all_records())
+    storage_state.with_storage_reliable(&app_handle, |storage| storage.get_all_records())
 }
 
 #[tauri::command]

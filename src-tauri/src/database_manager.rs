@@ -26,35 +26,84 @@ impl DatabaseManager {
     const MAX_BACKUPS: usize = 10;
 
     pub fn new(app_handle: &tauri::AppHandle) -> Result<Self> {
-        let app_data_dir = app_handle
-            .path()
-            .app_data_dir()
-            .map_err(|e| rusqlite::Error::SqliteFailure(
-                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
-                Some(format!("Failed to get app data dir: {}", e))
-            ))?;
+        // 使用统一的可靠路径获取方法
+        let app_data_dir = Self::get_app_data_dir_reliable(app_handle)?;
 
-        // 创建应用数据目录
-        std::fs::create_dir_all(&app_data_dir)
-            .map_err(|e| rusqlite::Error::SqliteFailure(
-                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
-                Some(format!("Failed to create app data dir: {}", e))
-            ))?;
+        // 使用统一的目录创建方法
+        Self::ensure_directories_exist(&app_data_dir)?;
 
         let db_path = app_data_dir.join("steno.db");
         let backup_dir = app_data_dir.join("backups");
         
-        // 创建备份目录
-        std::fs::create_dir_all(&backup_dir)
-            .map_err(|e| rusqlite::Error::SqliteFailure(
-                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
-                Some(format!("Failed to create backup dir: {}", e))
-            ))?;
+        // 创建备份目录（使用统一方法）
+        Self::create_directory_reliable(&backup_dir, "backup")?;
+
+        println!("✓ 数据库管理器初始化成功: {}", db_path.display());
+        log::info!("✓ 数据库管理器初始化成功: {}", db_path.display());
 
         Ok(Self {
             db_path,
             backup_dir,
         })
+    }
+
+    /// 可靠的应用数据目录获取 - 跨平台统一重试逻辑
+    fn get_app_data_dir_reliable(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
+        for attempt in 1..=3 {
+            match app_handle.path().app_data_dir() {
+                Ok(dir) => {
+                    log::info!("✓ 获取应用数据目录成功 (尝试 {}): {}", attempt, dir.display());
+                    return Ok(dir);
+                },
+                Err(e) => {
+                    log::warn!("⚠️ 获取应用数据目录失败 (尝试 {}/3): {}", attempt, e);
+                    if attempt < 3 {
+                        // 渐进式等待时间
+                        std::thread::sleep(std::time::Duration::from_millis(50 * attempt as u64));
+                    }
+                }
+            }
+        }
+        
+        Err(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
+            Some("Failed to get app data directory after multiple attempts".to_string())
+        ))
+    }
+
+    /// 统一的目录创建方法 - 确保关键目录存在
+    fn ensure_directories_exist(app_data_dir: &PathBuf) -> Result<()> {
+        Self::create_directory_reliable(app_data_dir, "app data")?;
+        Ok(())
+    }
+
+    /// 可靠的目录创建 - 跨平台统一重试逻辑
+    fn create_directory_reliable(dir_path: &PathBuf, dir_type: &str) -> Result<()> {
+        // 如果目录已存在，直接返回成功
+        if dir_path.exists() && dir_path.is_dir() {
+            return Ok(());
+        }
+
+        for attempt in 1..=3 {
+            match std::fs::create_dir_all(dir_path) {
+                Ok(_) => {
+                    log::info!("✓ 创建{}目录成功 (尝试 {}): {}", dir_type, attempt, dir_path.display());
+                    return Ok(());
+                },
+                Err(e) => {
+                    log::warn!("⚠️ 创建{}目录失败 (尝试 {}/3): {} - {}", dir_type, attempt, dir_path.display(), e);
+                    if attempt < 3 {
+                        // 渐进式等待时间，Windows可能需要更多时间
+                        std::thread::sleep(std::time::Duration::from_millis(100 * attempt as u64));
+                    }
+                }
+            }
+        }
+
+        Err(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
+            Some(format!("Failed to create {} directory after multiple attempts: {}", dir_type, dir_path.display()))
+        ))
     }
 
     /// 初始化或升级数据库
