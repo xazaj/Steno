@@ -1,7 +1,6 @@
 use rusqlite::{Connection, Result, params};
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use tauri::Manager;
 use crate::database_manager::DatabaseManager;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

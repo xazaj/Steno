@@ -1,5 +1,4 @@
 use rusqlite::{Connection, Result};
-use tauri::Manager;
 use std::path::PathBuf;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -77,6 +76,7 @@ impl DatabaseManager {
         #[cfg(not(target_os = "windows"))]
         {
             // macOS/Linux: 继续使用AppData目录
+            use tauri::Manager;
             for attempt in 1..=3 {
                 match app_handle.path().app_data_dir() {
                     Ok(dir) => {

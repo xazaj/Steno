@@ -2,7 +2,6 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use chrono::Utc;
-use tauri::Manager;
 use log::LevelFilter;
 use env_logger::{Builder, Target};
 
@@ -66,6 +65,7 @@ fn get_app_data_dir_for_logging(app_handle: &tauri::AppHandle) -> Result<PathBuf
     #[cfg(not(target_os = "windows"))]
     {
         // macOS/Linux: 使用AppData目录
+        use tauri::Manager;
         app_handle
             .path()
             .app_data_dir()

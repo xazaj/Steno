@@ -75,7 +75,7 @@ fn get_models_directory() -> PathBuf {
         // Windows: 使用安装目录下的models子目录
         get_windows_install_dir()
             .map(|install_dir| install_dir.join("models"))
-            .unwrap_or_else(|| PathBuf::from("./models"))
+            .unwrap_or_else(|_| PathBuf::from("./models"))
     }
     
     #[cfg(target_os = "macos")]
