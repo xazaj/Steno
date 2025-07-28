@@ -27,9 +27,15 @@ cmake --build . --config Release
 
 echo whisper.cpp build completed successfully!
 
-REM Verify essential files exist
-if not exist "src\libwhisper.a" (
-    echo Error: libwhisper.a not found after build
+REM Verify essential files exist (check both possible locations)
+if exist "src\libwhisper.a" (
+    echo Build verification passed: Found libwhisper.a
+) else if exist "src\Release\whisper.lib" (
+    echo Build verification passed: Found whisper.lib
+) else (
+    echo Error: Neither libwhisper.a nor whisper.lib found after build
+    echo Listing build contents:
+    dir /s src
     exit /b 1
 )
 

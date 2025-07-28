@@ -11,10 +11,14 @@ fn main() {
     let ggml_blas_path = ggml_lib_path.join("ggml-blas");
     let ggml_metal_path = ggml_lib_path.join("ggml-metal");
     
-    // Check if essential library files exist
-    let whisper_static_lib = whisper_lib_path.join("libwhisper.a");
-    if !whisper_static_lib.exists() {
-        panic!("Whisper static library not found at: {}. Please build whisper.cpp first using: cd src-tauri/lib/whisper.cpp && mkdir -p build && cd build && cmake .. && cmake --build . --config Release", whisper_static_lib.display());
+    // Check if essential library files exist (handle different platforms)
+    let whisper_static_lib_unix = whisper_lib_path.join("libwhisper.a");
+    let whisper_static_lib_windows = whisper_lib_path.join("Release").join("whisper.lib");
+    
+    if !whisper_static_lib_unix.exists() && !whisper_static_lib_windows.exists() {
+        panic!("Whisper static library not found. Checked locations:\n  - {}\n  - {}\nPlease build whisper.cpp first using: cd src-tauri/lib/whisper.cpp && mkdir -p build && cd build && cmake .. && cmake --build . --config Release", 
+               whisper_static_lib_unix.display(), 
+               whisper_static_lib_windows.display());
     }
 
     println!(

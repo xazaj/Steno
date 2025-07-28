@@ -10,6 +10,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 45
     
     steps:
     - name: Checkout repository
@@ -32,25 +33,39 @@ jobs:
       with:
         targets: x86_64-pc-windows-msvc
 
-    - name: Install build dependencies (Windows)
+    - name: Cache whisper.cpp build (Windows)
+      uses: actions/cache@v4
+      with:
+        path: src-tauri/lib/whisper.cpp/build
+        key: windows-x64-whisper-${{ hashFiles('src-tauri/lib/whisper.cpp/**/*.cpp', 'src-tauri/lib/whisper.cpp/**/*.h', 'src-tauri/lib/whisper.cpp/CMakeLists.txt') }}
+        restore-keys: |
+          windows-x64-whisper-
+
+    - name: Setup MSVC (Windows)
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install WebView2 (Windows)
       run: |
-        # Install WebView2
         Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "MicrosoftEdgeWebview2Setup.exe"
         Start-Process -FilePath "MicrosoftEdgeWebview2Setup.exe" -ArgumentList "/silent /install" -Wait
-        # Install CMake
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-        # Install Visual Studio Build Tools
-        choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools"
-        refreshenv
+      shell: powershell
+
+    - name: Verify build tools (Windows)
+      run: |
+        cmake --version
+        cl.exe 2>&1 | findstr "Version"
+      shell: cmd
 
     - name: Build whisper.cpp library (Windows)
       run: |
         cd src-tauri/lib/whisper.cpp
-        mkdir build -ErrorAction SilentlyContinue
+        if not exist build mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --config Release
-      shell: powershell
+        cmake .. -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022" -A x64
+        cmake --build . --config Release --parallel
+      shell: cmd
 
     - name: Build Tauri app for Windows
       run: npm run build:windows
@@ -68,6 +83,7 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    timeout-minutes: 45
     
     steps:
     - name: Checkout repository
@@ -90,9 +106,18 @@ jobs:
       with:
         targets: aarch64-apple-darwin,x86_64-apple-darwin
 
-    - name: Install build dependencies (macOS)
+    - name: Cache whisper.cpp build (macOS)
+      uses: actions/cache@v4
+      with:
+        path: src-tauri/lib/whisper.cpp/build
+        key: macos-whisper-${{ hashFiles('src-tauri/lib/whisper.cpp/**/*.cpp', 'src-tauri/lib/whisper.cpp/**/*.h', 'src-tauri/lib/whisper.cpp/CMakeLists.txt') }}
+        restore-keys: |
+          macos-whisper-
+
+    - name: Verify build tools (macOS)
       run: |
-        brew install cmake
+        cmake --version
+        xcode-select -p
 
     - name: Build whisper.cpp library (macOS)
       run: |
@@ -100,7 +125,7 @@ jobs:
         mkdir -p build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --config Release
+        cmake --build . --config Release --parallel
 
     - name: Build Tauri app for macOS
       run: npm run tauri:build
