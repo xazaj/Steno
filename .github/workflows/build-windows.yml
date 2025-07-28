@@ -136,8 +136,19 @@ jobs:
         cd src-tauri/lib/whisper.cpp
         mkdir -p build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
         cmake --build . --config Release --parallel
+
+    - name: Verify whisper.cpp build artifacts (macOS)
+      run: |
+        cd src-tauri/lib/whisper.cpp/build
+        echo "=== Build directory structure ==="
+        find . -name "*.a" -type f
+        echo "=== Checking specific library locations ==="
+        if [ -f "src/libwhisper.a" ]; then echo "✓ Found libwhisper.a"; else echo "✗ Missing libwhisper.a"; fi
+        if [ -f "ggml/src/libggml.a" ]; then echo "✓ Found libggml.a"; else echo "✗ Missing libggml.a"; fi
+        echo "=== All files in src directory ==="
+        ls -la src/ || echo "src/ directory not found"
 
     - name: Build Tauri app for macOS
       run: npm run tauri:build
