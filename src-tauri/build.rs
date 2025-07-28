@@ -34,12 +34,6 @@ fn main() {
         whisper_lib_path.join("libwhisper.a")
     };
     
-    let ggml_blas_lib = if target_os == "windows" {
-        ggml_blas_path.join("ggml-blas.lib")
-    } else {
-        ggml_blas_path.join("libggml-blas.a")
-    };
-    
     // Validate core libraries exist
     if !whisper_static_lib.exists() {
         panic!("Whisper static library not found at: {}\nPlease build whisper.cpp first using:\n  cd src-tauri/lib/whisper.cpp\n  mkdir -p build\n  cd build\n  cmake .. -DCMAKE_BUILD_TYPE=Release{}\n  cmake --build . --config Release", 
@@ -47,15 +41,29 @@ fn main() {
                if target_os == "windows" { " -G \"Visual Studio 17 2022\" -A x64" } else { "" });
     }
     
-    if !ggml_blas_lib.exists() {
-        panic!("GGML BLAS library not found at: {}\nThis suggests whisper.cpp was not built completely.\nPlease ensure the build completed successfully.", 
-               ggml_blas_lib.display());
+    // Check if BLAS support is available (it's disabled by default on Windows)
+    let ggml_blas_lib = if target_os == "windows" {
+        ggml_blas_path.join("ggml-blas.lib")
+    } else {
+        ggml_blas_path.join("libggml-blas.a")
+    };
+    
+    let has_blas = ggml_blas_lib.exists();
+    if has_blas {
+        println!("cargo:rustc-cfg=feature=\"blas\"");
+        println!("cargo:warning=BLAS support detected and enabled");
+    } else {
+        println!("cargo:warning=BLAS support not found - this is normal on Windows (BLAS disabled by default)");
     }
 
     // Add library search paths
     println!("cargo:rustc-link-search=native={}", whisper_lib_path.display());
     println!("cargo:rustc-link-search=native={}", ggml_lib_path.display());
-    println!("cargo:rustc-link-search=native={}", ggml_blas_path.display());
+    
+    // Add BLAS path only if BLAS is available
+    if has_blas {
+        println!("cargo:rustc-link-search=native={}", ggml_blas_path.display());
+    }
     
     // Platform-specific additional search paths
     if target_os == "macos" {
@@ -70,8 +78,12 @@ fn main() {
     println!("cargo:rustc-link-lib=static=whisper");
     println!("cargo:rustc-link-lib=static=ggml-base");
     println!("cargo:rustc-link-lib=static=ggml-cpu");
-    println!("cargo:rustc-link-lib=static=ggml-blas");
     println!("cargo:rustc-link-lib=static=ggml");
+    
+    // Link BLAS only if available
+    if has_blas {
+        println!("cargo:rustc-link-lib=static=ggml-blas");
+    }
 
     // Platform-specific linking
     match target_os.as_str() {

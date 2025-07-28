@@ -45,10 +45,9 @@ if exist "ggml\src\Release\ggml-base.lib" (
 )
 
 if exist "ggml\src\ggml-blas\Release\ggml-blas.lib" (
-    echo ✓ Found ggml-blas.lib
+    echo ✓ Found ggml-blas.lib (BLAS support enabled)
 ) else (
-    echo ✗ Missing ggml-blas.lib
-    set BUILD_ERROR=1
+    echo ⚠ ggml-blas.lib not found (BLAS support disabled - this is normal on Windows)
 )
 
 if exist "ggml\src\Release\ggml.lib" (

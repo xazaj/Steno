@@ -75,7 +75,7 @@ jobs:
         echo "=== Checking specific library locations ==="
         if exist "src\Release\whisper.lib" (echo "✓ Found whisper.lib") else (echo "✗ Missing whisper.lib")
         if exist "ggml\src\Release\ggml-base.lib" (echo "✓ Found ggml-base.lib") else (echo "✗ Missing ggml-base.lib")
-        if exist "ggml\src\ggml-blas\Release\ggml-blas.lib" (echo "✓ Found ggml-blas.lib") else (echo "✗ Missing ggml-blas.lib")
+        if exist "ggml\src\ggml-blas\Release\ggml-blas.lib" (echo "✓ Found ggml-blas.lib (BLAS enabled)") else (echo "⚠ ggml-blas.lib not found (BLAS disabled - normal on Windows)")
         if exist "ggml\src\Release\ggml.lib" (echo "✓ Found ggml.lib") else (echo "✗ Missing ggml.lib")
       shell: cmd
 
