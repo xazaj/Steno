@@ -10,7 +10,7 @@ default-run = "steno"
 
 [lib]
 name = "steno_lib"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["staticlib", "rlib"]
 
 [[bin]]
 name = "steno"

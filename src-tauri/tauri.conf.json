@@ -86,7 +86,11 @@
       "nsis": {
         "installMode": "perMachine",
         "languages": ["SimpChinese", "English"]
-      }
+      },
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
+      "allowDowngrades": true
     }
   }
 }

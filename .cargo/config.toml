@@ -1,0 +1,16 @@
+[target.x86_64-pc-windows-msvc]
+rustflags = [
+    "-C", "target-feature=+crt-static",
+    "-L", "native=C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/lib/x64",
+    "-L", "native=C:/Program Files (x86)/Windows Kits/10/lib/10.0.22621.0/um/x64",
+    "-L", "native=C:/Program Files (x86)/Windows Kits/10/lib/10.0.22621.0/ucrt/x64"
+]
+
+[target.x86_64-pc-windows-gnu]
+rustflags = [
+    "-C", "target-feature=+crt-static"
+]
+
+[env]
+# Force static linking of C runtime
+RUSTFLAGS = "-C target-feature=+crt-static"

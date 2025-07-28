@@ -85,6 +85,12 @@ fn main() {
         println!("cargo:rustc-link-lib=static=ggml-blas");
     }
 
+    // Force static linking for all platforms
+    println!("cargo:rustc-link-arg=-static-libgcc");
+    if target_os == "windows" {
+        println!("cargo:rustc-link-arg=-static");
+    }
+    
     // Platform-specific linking
     match target_os.as_str() {
         "macos" => {
@@ -109,6 +115,10 @@ fn main() {
             println!("cargo:rustc-link-lib=uuid");
             println!("cargo:rustc-link-lib=comdlg32");
             println!("cargo:rustc-link-lib=advapi32");
+            // C++ runtime libraries
+            println!("cargo:rustc-link-lib=static=libcmt");
+            println!("cargo:rustc-link-lib=static=libvcruntime");
+            println!("cargo:rustc-link-lib=static=libucrt");
         },
         "linux" => {
             // Linux-specific libraries

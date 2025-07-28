@@ -23,7 +23,7 @@ cd build
 
 # Configure and build
 echo "Configuring cmake..."
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
 
 echo "Building whisper.cpp..."
 cmake --build . --config Release
