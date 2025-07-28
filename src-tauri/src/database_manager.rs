@@ -205,7 +205,7 @@ impl DatabaseManager {
                     Some("Invalid version format".to_string())
                 )
             }),
-            Err(rusqlite::Error::SqliteFailure(err, _)) if err.code == rusqlite::ffi::SQLITE_NOTFOUND => {
+            Err(rusqlite::Error::QueryReturnedNoRows) => {
                 Ok(0) // 版本记录不存在，认为是版本0
             },
             Err(e) => Err(e),
