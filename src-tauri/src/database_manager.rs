@@ -47,28 +47,76 @@ impl DatabaseManager {
         })
     }
 
-    /// 可靠的应用数据目录获取 - 跨平台统一重试逻辑
+    /// 可靠的应用数据目录获取 - Windows使用安装目录，其他平台使用AppData
     fn get_app_data_dir_reliable(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
-        for attempt in 1..=3 {
-            match app_handle.path().app_data_dir() {
-                Ok(dir) => {
-                    log::info!("✓ 获取应用数据目录成功 (尝试 {}): {}", attempt, dir.display());
-                    return Ok(dir);
-                },
-                Err(e) => {
-                    log::warn!("⚠️ 获取应用数据目录失败 (尝试 {}/3): {}", attempt, e);
-                    if attempt < 3 {
-                        // 渐进式等待时间
-                        std::thread::sleep(std::time::Duration::from_millis(50 * attempt as u64));
+        #[cfg(target_os = "windows")]
+        {
+            // Windows: 使用安装目录下的data子目录
+            for attempt in 1..=3 {
+                match Self::get_windows_install_dir() {
+                    Ok(install_dir) => {
+                        let data_dir = install_dir.join("data");
+                        log::info!("✓ 获取Windows安装目录成功 (尝试 {}): {}", attempt, data_dir.display());
+                        return Ok(data_dir);
+                    },
+                    Err(e) => {
+                        log::warn!("⚠️ 获取Windows安装目录失败 (尝试 {}/3): {}", attempt, e);
+                        if attempt < 3 {
+                            std::thread::sleep(std::time::Duration::from_millis(50 * attempt as u64));
+                        }
                     }
                 }
             }
+            
+            Err(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
+                Some("Failed to get Windows install directory after multiple attempts".to_string())
+            ))
         }
         
-        Err(rusqlite::Error::SqliteFailure(
-            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
-            Some("Failed to get app data directory after multiple attempts".to_string())
-        ))
+        #[cfg(not(target_os = "windows"))]
+        {
+            // macOS/Linux: 继续使用AppData目录
+            for attempt in 1..=3 {
+                match app_handle.path().app_data_dir() {
+                    Ok(dir) => {
+                        log::info!("✓ 获取应用数据目录成功 (尝试 {}): {}", attempt, dir.display());
+                        return Ok(dir);
+                    },
+                    Err(e) => {
+                        log::warn!("⚠️ 获取应用数据目录失败 (尝试 {}/3): {}", attempt, e);
+                        if attempt < 3 {
+                            // 渐进式等待时间
+                            std::thread::sleep(std::time::Duration::from_millis(50 * attempt as u64));
+                        }
+                    }
+                }
+            }
+            
+            Err(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
+                Some("Failed to get app data directory after multiple attempts".to_string())
+            ))
+        }
+    }
+
+    /// Windows专用：获取应用程序安装目录
+    #[cfg(target_os = "windows")]
+    fn get_windows_install_dir() -> Result<PathBuf> {
+        // 方法1: 尝试从当前可执行文件路径获取
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                return Ok(exe_dir.to_path_buf());
+            }
+        }
+        
+        // 方法2: 使用工作目录作为备选
+        if let Ok(current_dir) = std::env::current_dir() {
+            return Ok(current_dir);
+        }
+        
+        // 方法3: 最后备选 - 使用相对路径
+        Ok(PathBuf::from("."))
     }
 
     /// 统一的目录创建方法 - 确保关键目录存在

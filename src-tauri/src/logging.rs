@@ -8,11 +8,8 @@ use env_logger::{Builder, Target};
 
 /// 初始化日志系统，将日志写入应用数据目录
 pub fn init_logging(app_handle: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    // 获取应用数据目录
-    let app_data_dir = app_handle
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    // 获取应用数据目录 - Windows使用安装目录，其他平台使用AppData
+    let app_data_dir = get_app_data_dir_for_logging(app_handle)?;
 
     // 创建日志目录
     let log_dir = app_data_dir.join("logs");
@@ -56,6 +53,43 @@ pub fn init_logging(app_handle: &tauri::AppHandle) -> Result<(), Box<dyn std::er
     cleanup_old_logs(&log_dir)?;
 
     Ok(())
+}
+
+/// 获取应用数据目录 - 支持Windows安装目录模式
+fn get_app_data_dir_for_logging(app_handle: &tauri::AppHandle) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    #[cfg(target_os = "windows")]
+    {
+        // Windows: 使用安装目录
+        get_windows_install_dir().map_err(|e| e.into())
+    }
+    
+    #[cfg(not(target_os = "windows"))]
+    {
+        // macOS/Linux: 使用AppData目录
+        app_handle
+            .path()
+            .app_data_dir()
+            .map_err(|e| format!("Failed to get app data dir: {}", e).into())
+    }
+}
+
+/// Windows专用：获取应用程序安装目录
+#[cfg(target_os = "windows")]
+fn get_windows_install_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    // 方法1: 尝试从当前可执行文件路径获取
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            return Ok(exe_dir.to_path_buf());
+        }
+    }
+    
+    // 方法2: 使用工作目录作为备选
+    if let Ok(current_dir) = std::env::current_dir() {
+        return Ok(current_dir);
+    }
+    
+    // 方法3: 最后备选 - 使用相对路径
+    Ok(PathBuf::from("."))
 }
 
 /// 清理超过7天的旧日志文件

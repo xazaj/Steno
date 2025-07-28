@@ -9,6 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // 模块导入
 mod logging;
+mod path_test;
 mod storage;
 mod storage_commands;
 mod database_manager;

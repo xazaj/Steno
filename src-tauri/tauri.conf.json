@@ -2,7 +2,7 @@
   "$schema": "https://beta.tauri.app/schema/config.json",
   "productName": "Steno",
   "version": "1.0.0",
-  "identifier": "com.steno.macos",
+  "identifier": "com.steno.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",

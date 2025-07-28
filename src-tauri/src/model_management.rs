@@ -70,25 +70,48 @@ impl Default for ModelManager {
 }
 
 fn get_models_directory() -> PathBuf {
-    // 使用系统的应用数据目录
-    let app_data_dir = if cfg!(target_os = "macos") {
+    #[cfg(target_os = "windows")]
+    {
+        // Windows: 使用安装目录下的models子目录
+        get_windows_install_dir()
+            .map(|install_dir| install_dir.join("models"))
+            .unwrap_or_else(|| PathBuf::from("./models"))
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
         // macOS: ~/Library/Application Support/Steno
         dirs::home_dir()
-            .map(|h| h.join("Library").join("Application Support").join("Steno"))
+            .map(|h| h.join("Library").join("Application Support").join("Steno").join("models"))
             .unwrap_or_else(|| PathBuf::from("./models"))
-    } else if cfg!(target_os = "windows") {
-        // Windows: %APPDATA%/Steno
-        dirs::data_dir()
-            .map(|d| d.join("Steno"))
-            .unwrap_or_else(|| PathBuf::from("./models"))
-    } else {
+    }
+    
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
         // Linux: ~/.local/share/steno
         dirs::data_dir()
-            .map(|d| d.join("steno"))
+            .map(|d| d.join("steno").join("models"))
             .unwrap_or_else(|| PathBuf::from("./models"))
-    };
+    }
+}
+
+/// Windows专用：获取应用程序安装目录
+#[cfg(target_os = "windows")]
+fn get_windows_install_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    // 方法1: 尝试从当前可执行文件路径获取
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            return Ok(exe_dir.to_path_buf());
+        }
+    }
     
-    app_data_dir.join("models")
+    // 方法2: 使用工作目录作为备选
+    if let Ok(current_dir) = std::env::current_dir() {
+        return Ok(current_dir);
+    }
+    
+    // 方法3: 最后备选 - 使用相对路径
+    Ok(PathBuf::from("."))
 }
 
 fn get_config_path() -> PathBuf {
