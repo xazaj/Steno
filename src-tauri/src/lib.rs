@@ -10,6 +10,9 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 // 模块导入
 mod storage;
 mod storage_commands;
+mod database_manager;
+mod database_commands;
+mod app_lifecycle;
 mod long_audio;
 mod long_audio_commands;
 mod realtime_audio_full;
@@ -759,6 +762,14 @@ pub fn run() {
             storage_commands::delete_prompt_template,
             storage_commands::search_prompt_templates,
             storage_commands::increment_prompt_usage,
+            // 数据库管理命令
+            database_commands::get_database_info,
+            database_commands::create_database_backup,
+            database_commands::list_database_backups,
+            database_commands::restore_database_backup,
+            database_commands::vacuum_database,
+            database_commands::check_database_integrity,
+            database_commands::delete_database_backup,
             long_audio_commands::create_long_audio_task,
             long_audio_commands::start_long_audio_task,
             long_audio_commands::pause_long_audio_task,
@@ -804,6 +815,17 @@ pub fn run() {
             model_management::import_local_model,
             model_management::get_current_model
         ])
+        .setup(|app| {
+            // 在应用启动时初始化数据库管理
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = app_lifecycle::initialize_app(&app_handle).await {
+                    eprintln!("❗ 应用初始化失败: {}", e);
+                    // 可以选择显示错误对话框或记录错误
+                }
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -2,6 +2,7 @@ use rusqlite::{Connection, Result, params};
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use tauri::Manager;
+use crate::database_manager::DatabaseManager;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TranscriptionRecord {
@@ -70,118 +71,17 @@ pub struct StorageService {
 
 impl StorageService {
     pub fn new(app_handle: &tauri::AppHandle) -> Result<Self> {
-        let app_data_dir = app_handle
-            .path()
-            .app_data_dir()
-            .map_err(|e| rusqlite::Error::SqliteFailure(
-                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
-                Some(format!("Failed to get app data dir: {}", e))
-            ))?;
-
-        std::fs::create_dir_all(&app_data_dir)
-            .map_err(|e| rusqlite::Error::SqliteFailure(
-                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
-                Some(format!("Failed to create app data dir: {}", e))
-            ))?;
-
-        let db_path = app_data_dir.join("steno.db");
-        let conn = Connection::open(db_path)?;
+        // 使用数据库管理器初始化数据库
+        let db_manager = DatabaseManager::new(app_handle)?;
+        let conn = db_manager.initialize_database()?;
         
         let storage = Self { conn };
-        storage.init_database()?;
+        // 初始化内置提示词（如果需要）
+        storage.init_built_in_prompts()?;
         Ok(storage)
     }
 
-    fn init_database(&self) -> Result<()> {
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS transcription_records (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                original_file_name TEXT NOT NULL,
-                file_path TEXT NOT NULL,
-                file_size INTEGER NOT NULL,
-                duration REAL,
-                status TEXT NOT NULL,
-                progress REAL DEFAULT 0,
-                error_message TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                tags TEXT NOT NULL,
-                category TEXT,
-                is_starred BOOLEAN DEFAULT 0,
-                config TEXT NOT NULL,
-                processing_time REAL,
-                accuracy REAL
-            )",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS transcription_contents (
-                record_id TEXT PRIMARY KEY,
-                full_text TEXT NOT NULL,
-                segments TEXT,
-                FOREIGN KEY (record_id) REFERENCES transcription_records(id)
-            )",
-            [],
-        )?;
-
-        // 创建索引以提高查询性能
-        self.conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_records_created_at ON transcription_records(created_at DESC)",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_records_status ON transcription_records(status)",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_records_category ON transcription_records(category)",
-            [],
-        )?;
-
-        // 创建提示词模板表
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS prompt_templates (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                content TEXT NOT NULL,
-                category TEXT NOT NULL,
-                language TEXT NOT NULL,
-                is_built_in BOOLEAN DEFAULT 0,
-                description TEXT,
-                tags TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                usage_count INTEGER DEFAULT 0,
-                is_active BOOLEAN DEFAULT 1
-            )",
-            [],
-        )?;
-
-        // 创建提示词相关索引
-        self.conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_prompts_category ON prompt_templates(category)",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_prompts_language ON prompt_templates(language)",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_prompts_active ON prompt_templates(is_active)",
-            [],
-        )?;
-
-        // 初始化内置提示词
-        self.init_built_in_prompts()?;
-
-        Ok(())
-    }
+    // 数据库初始化现在由 DatabaseManager 处理
 
     pub fn save_record(&self, record: &TranscriptionRecord) -> Result<()> {
         let tx = self.conn.unchecked_transaction()?;
