@@ -34,8 +34,32 @@ fn main() {
         whisper_lib_path.join("libwhisper.a")
     };
     
-    // Validate core libraries exist
+    // Validate core libraries exist with detailed debugging
     if !whisper_static_lib.exists() {
+        // Print debugging information about directory structure
+        println!("cargo:warning=Target OS: {}", target_os);
+        println!("cargo:warning=Whisper lib path: {}", whisper_lib_path.display());
+        println!("cargo:warning=Expected library location: {}", whisper_static_lib.display());
+        
+        // List files in the build directory for debugging
+        if let Ok(entries) = fs::read_dir(&whisper_lib_path) {
+            println!("cargo:warning=Files in whisper lib directory:");
+            for entry in entries.flatten() {
+                println!("cargo:warning=  {}", entry.path().display());
+            }
+        } else {
+            println!("cargo:warning=Cannot read whisper lib directory: {}", whisper_lib_path.display());
+        }
+        
+        // Check parent directories too  
+        let build_dir = whisper_cpp_path.join("build");
+        if let Ok(entries) = fs::read_dir(&build_dir) {
+            println!("cargo:warning=Files in build directory:");
+            for entry in entries.flatten() {
+                println!("cargo:warning=  {}", entry.path().display());
+            }
+        }
+        
         panic!("Whisper static library not found at: {}\nPlease build whisper.cpp first using:\n  cd src-tauri/lib/whisper.cpp\n  mkdir -p build\n  cd build\n  cmake .. -DCMAKE_BUILD_TYPE=Release{}\n  cmake --build . --config Release", 
                whisper_static_lib.display(),
                if target_os == "windows" { " -G \"Visual Studio 17 2022\" -A x64" } else { "" });

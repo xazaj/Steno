@@ -108,8 +108,19 @@ jobs:
           cd src-tauri/lib/whisper.cpp
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
           cmake --build . --config Release --parallel
+        shell: bash
+
+      - name: Verify whisper.cpp build artifacts (Unix)
+        if: matrix.platform != 'windows-latest'
+        run: |
+          cd src-tauri/lib/whisper.cpp/build
+          echo "=== Checking library locations ==="
+          find . -name "*.a" -type f
+          echo "=== Expected locations ==="
+          ls -la src/ || echo "src/ directory not found"
+          ls -la ggml/src/ || echo "ggml/src/ directory not found"
         shell: bash
 
       - name: Install frontend dependencies
