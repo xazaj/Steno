@@ -26,35 +26,54 @@ Steno安装目录/
 
 ## 平台对比
 
-| 组件 | Windows（安装目录模式） | macOS/Linux（传统模式） |
+| 组件 | Windows（智能模式） | macOS/Linux（传统模式） |
 |------|-------------------------|-------------------------|
-| 数据库 | `./data/steno.db` | `~/Library/Application Support/com.steno.app/` |
-| 模型文件 | `./models/` | `~/Library/Application Support/Steno/models/` |
-| 日志文件 | `./logs/` | `~/Library/Application Support/com.steno.app/logs/` |
-| 配置文件 | `./models/model_config.json` | `~/Library/Application Support/Steno/models/model_config.json` |
+| 数据库 | `{智能路径}/data/steno.db` | `~/Library/Application Support/com.steno.app/` |
+| 模型文件 | `{智能路径}/models/` | `~/Library/Application Support/Steno/models/` |
+| 日志文件 | `{智能路径}/logs/` | `~/Library/Application Support/com.steno.app/logs/` |
+| 配置文件 | `{智能路径}/models/model_config.json` | `~/Library/Application Support/Steno/models/model_config.json` |
+
+### Windows智能路径说明：
+
+| 场景 | 智能路径 | 说明 |
+|------|----------|------|
+| **便携安装** | `D:\Steno\` | 可写的安装目录，真正便携 |
+| **系统安装** | `%APPDATA%\Steno\` | perMachine安装，无Program Files写权限 |
+| **文档备选** | `%USERPROFILE%\Documents\Steno\` | AppData不可用时的备选 |
+| **开发环境** | `.\` | 开发模式相对路径 |
 
 ## 技术实现
 
-### 1. 路径获取策略
+### 1. 智能路径获取策略
+
+Windows平台现在使用**智能路径检测**，自动选择最合适的存储位置：
 
 ```rust
-// Windows: 使用安装目录
 #[cfg(target_os = "windows")]
 fn get_windows_install_dir() -> Result<PathBuf> {
-    // 方法1: 从可执行文件路径获取
+    // 策略1: 便携模式 - 检查可执行文件目录写权限
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
-            return Ok(exe_dir.to_path_buf());
+            let test_file = exe_dir.join("write_test.tmp");
+            if std::fs::File::create(&test_file).is_ok() {
+                std::fs::remove_file(&test_file);
+                return Ok(exe_dir.to_path_buf()); // 便携模式
+            }
         }
     }
     
-    // 方法2: 使用工作目录作为备选
-    if let Ok(current_dir) = std::env::current_dir() {
-        return Ok(current_dir);
+    // 策略2: 用户数据目录（兼容perMachine安装）
+    if let Some(app_data) = dirs::data_dir() {
+        return Ok(app_data.join("Steno"));
     }
     
-    // 方法3: 最后备选
-    Ok(PathBuf::from("."))
+    // 策略3: 文档目录备选
+    if let Some(docs_dir) = dirs::document_dir() {
+        return Ok(docs_dir.join("Steno"));
+    }
+    
+    // 策略4: 开发环境备选
+    Ok(std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
 }
 ```
 

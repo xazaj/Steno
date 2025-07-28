@@ -95,22 +95,37 @@ fn get_models_directory() -> PathBuf {
     }
 }
 
-/// Windows专用：获取应用程序安装目录
+/// Windows专用：获取合适的数据存储目录
 #[cfg(target_os = "windows")]
 fn get_windows_install_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
-    // 方法1: 尝试从当前可执行文件路径获取
+    // 优先策略：尝试使用可执行文件目录（便携模式）
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
-            return Ok(exe_dir.to_path_buf());
+            // 检查是否可以在可执行文件目录写入（便携模式）
+            let test_file = exe_dir.join("write_test.tmp");
+            if std::fs::File::create(&test_file).is_ok() {
+                let _ = std::fs::remove_file(&test_file); // 清理测试文件
+                return Ok(exe_dir.to_path_buf());
+            }
         }
     }
     
-    // 方法2: 使用工作目录作为备选
+    // 备选策略1: 使用用户AppData目录（兼容perMachine安装）
+    if let Some(app_data) = dirs::data_dir() {
+        return Ok(app_data.join("Steno"));
+    }
+    
+    // 备选策略2: 使用用户文档目录
+    if let Some(docs_dir) = dirs::document_dir() {
+        return Ok(docs_dir.join("Steno"));
+    }
+    
+    // 备选策略3: 使用工作目录（开发环境）
     if let Ok(current_dir) = std::env::current_dir() {
         return Ok(current_dir);
     }
     
-    // 方法3: 最后备选 - 使用相对路径
+    // 最后备选：相对路径
     Ok(PathBuf::from("."))
 }
 
