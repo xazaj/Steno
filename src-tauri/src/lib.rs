@@ -8,6 +8,7 @@
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // 模块导入
+mod logging;
 mod storage;
 mod storage_commands;
 mod database_manager;
@@ -816,24 +817,39 @@ pub fn run() {
             model_management::get_current_model
         ])
         .setup(|app| {
-            // 同步初始化关键组件，确保应用就绪前完成初始化
             let app_handle = app.handle().clone();
             
-            // 使用 block_on 确保初始化在应用启动前完成
-            match tauri::async_runtime::block_on(app_lifecycle::initialize_app(&app_handle)) {
-                Ok(_) => {
-                    println!("✅ 应用初始化成功完成");
-                    Ok(())
-                },
-                Err(e) => {
-                    eprintln!("❗ 应用初始化失败: {}", e);
-                    // 应用启动失败，返回错误
-                    Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("应用初始化失败: {}", e)
-                    )))
-                }
+            // 首先初始化日志系统
+            if let Err(e) = logging::init_logging(&app_handle) {
+                eprintln!("⚠️ 日志系统初始化失败: {}", e);
+                // 日志初始化失败不应阻止应用启动
             }
+            
+            log::info!("🚀 开始 Tauri 应用设置...");
+            
+            // 异步初始化数据库和存储，避免阻塞主线程
+            let app_handle_clone = app_handle.clone();
+            tauri::async_runtime::spawn(async move {
+                log::info!("🔧 开始异步初始化应用组件...");
+                
+                match app_lifecycle::initialize_app(&app_handle_clone).await {
+                    Ok(_) => {
+                        log::info!("✅ 应用组件初始化成功完成");
+                        println!("✅ 应用组件初始化成功完成");
+                    },
+                    Err(e) => {
+                        log::error!("❌ 应用组件初始化失败: {}", e);
+                        eprintln!("❗ 应用组件初始化失败: {}", e);
+                        
+                        // 初始化失败时，记录详细信息但不退出应用
+                        // 应用仍然可以启动，但部分功能可能不可用
+                        logging::log_app_crash(&format!("组件初始化失败: {}", e));
+                    }
+                }
+            });
+            
+            log::info!("✅ Tauri 应用设置完成");
+            Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

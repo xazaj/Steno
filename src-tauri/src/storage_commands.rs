@@ -42,15 +42,18 @@ impl StorageState {
             },
             None => {
                 // 尝试自动初始化
+                log::warn!("⚠️ 存储服务未初始化，尝试自动初始化...");
                 println!("⚠️ 存储服务未初始化，尝试自动初始化...");
                 match crate::storage::StorageService::new(app_handle) {
                     Ok(storage) => {
                         *state = Some(storage);
                         drop(state); // 释放锁
+                        log::info!("✅ 存储服务自动初始化成功");
                         println!("✅ 存储服务自动初始化成功");
                         self.with_storage(f)
                     },
                     Err(e) => {
+                        log::error!("❌ 存储服务自动初始化失败: {}", e);
                         eprintln!("❌ 存储服务自动初始化失败: {}", e);
                         Err(format!("Storage auto-initialization failed: {}", e))
                     }

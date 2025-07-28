@@ -41,6 +41,9 @@ tokio = { version = "1", features = ["full"] }
 mp3-duration = "0.1"
 # 文本处理
 regex = "1.0"
+# 日志记录
+log = "0.4"
+env_logger = "0.10"
 # 音频处理优化
 rustfft = "6.1"
 # VAD语音活动检测
