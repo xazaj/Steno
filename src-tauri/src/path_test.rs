@@ -48,19 +48,42 @@ mod tests {
 /// Windows专用：获取应用程序安装目录
 #[cfg(target_os = "windows")]
 fn get_windows_install_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
-    // 方法1: 尝试从当前可执行文件路径获取
+    // 策略1：优先使用用户AppData目录（推荐，符合Windows最佳实践）
+    // %APPDATA%\Roaming\Steno
+    if let Some(app_data) = dirs::data_dir() {
+        return Ok(app_data.join("Steno"));
+    }
+    
+    // 策略2：备选使用Local AppData目录（更快的本地存储）
+    if let Some(local_data) = dirs::data_local_dir() {
+        return Ok(local_data.join("Steno"));
+    }
+    
+    // 策略3：便携模式检查（仅当可执行文件目录可写或有便携标记时使用）
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
-            return Ok(exe_dir.to_path_buf());
+            // 检查是否存在便携模式标记文件或可执行文件目录可写
+            let portable_marker = exe_dir.join("portable.txt");
+            let test_file = exe_dir.join("write_test.tmp");
+            
+            if portable_marker.exists() || std::fs::File::create(&test_file).is_ok() {
+                let _ = std::fs::remove_file(&test_file); // 清理测试文件
+                return Ok(exe_dir.to_path_buf());
+            }
         }
     }
     
-    // 方法2: 使用工作目录作为备选
+    // 策略4: 使用用户文档目录
+    if let Some(docs_dir) = dirs::document_dir() {
+        return Ok(docs_dir.join("Steno"));
+    }
+    
+    // 策略5: 开发环境回退到工作目录
     if let Ok(current_dir) = std::env::current_dir() {
         return Ok(current_dir);
     }
     
-    // 方法3: 最后备选 - 使用相对路径
+    // 最后备选：相对路径
     Ok(PathBuf::from("."))
 }
 

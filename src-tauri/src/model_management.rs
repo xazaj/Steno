@@ -98,29 +98,37 @@ fn get_models_directory() -> PathBuf {
 /// Windows专用：获取合适的数据存储目录
 #[cfg(target_os = "windows")]
 fn get_windows_install_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
-    // 优先策略：尝试使用可执行文件目录（便携模式）
+    // 策略1：优先使用用户AppData目录（推荐，符合Windows最佳实践）
+    // %APPDATA%\Roaming\Steno - 适合模型文件存储
+    if let Some(app_data) = dirs::data_dir() {
+        return Ok(app_data.join("Steno"));
+    }
+    
+    // 策略2：备选使用Local AppData目录（更快的本地存储）
+    if let Some(local_data) = dirs::data_local_dir() {
+        return Ok(local_data.join("Steno"));
+    }
+    
+    // 策略3：便携模式检查（仅当可执行文件目录可写或有便携标记时使用）
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
-            // 检查是否可以在可执行文件目录写入（便携模式）
+            // 检查是否存在便携模式标记文件或可执行文件目录可写
+            let portable_marker = exe_dir.join("portable.txt");
             let test_file = exe_dir.join("write_test.tmp");
-            if std::fs::File::create(&test_file).is_ok() {
+            
+            if portable_marker.exists() || std::fs::File::create(&test_file).is_ok() {
                 let _ = std::fs::remove_file(&test_file); // 清理测试文件
                 return Ok(exe_dir.to_path_buf());
             }
         }
     }
     
-    // 备选策略1: 使用用户AppData目录（兼容perMachine安装）
-    if let Some(app_data) = dirs::data_dir() {
-        return Ok(app_data.join("Steno"));
-    }
-    
-    // 备选策略2: 使用用户文档目录
+    // 策略4: 使用用户文档目录
     if let Some(docs_dir) = dirs::document_dir() {
         return Ok(docs_dir.join("Steno"));
     }
     
-    // 备选策略3: 使用工作目录（开发环境）
+    // 策略5: 开发环境回退到工作目录
     if let Ok(current_dir) = std::env::current_dir() {
         return Ok(current_dir);
     }

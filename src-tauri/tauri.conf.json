@@ -80,17 +80,41 @@
       }
     },
     "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
       "wix": {
-        "language": "zh-CN"
+        "language": "zh-CN",
+        "template": "./installer-template.wxs",
+        "fragmentPaths": [],
+        "componentGroupRefs": [],
+        "componentRefs": [],
+        "featureGroupRefs": [],
+        "featureRefs": [],
+        "mergeRefs": [],
+        "skipWebviewInstall": false,
+        "license": "./LICENSE",
+        "enableElevatedUpdateTask": false,
+        "bannerPath": "",
+        "dialogImagePath": ""
       },
       "nsis": {
-        "installMode": "perMachine",
-        "languages": ["SimpChinese", "English"]
+        "template": "./installer-template.nsi",
+        "license": "./LICENSE",
+        "headerImage": "",
+        "sidebarImage": "",
+        "installerIcon": "./icons/icon.ico",
+        "installMode": "currentUser",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": true,
+        "startMenuFolder": "Steno"
       },
       "webviewInstallMode": {
-        "type": "embedBootstrapper"
+        "type": "embedBootstrapper",
+        "silent": true
       },
-      "allowDowngrades": true
+      "allowDowngrades": true,
+      "tsp": false
     }
   }
 }

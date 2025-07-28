@@ -83,6 +83,49 @@ jobs:
       run: npm run build:windows
       env:
         RUST_BACKTRACE: 1
+        TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+    - name: Verify build outputs (Windows)
+      run: |
+        echo "=== Checking build outputs ==="
+        if exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi" (dir "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi\*.msi") else (echo "⚠️ MSI files not found")
+        if exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis" (dir "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\*.exe") else (echo "⚠️ NSIS files not found")
+        echo "=== Executable size and info ==="
+        if exist "src-tauri\target\x86_64-pc-windows-msvc\release\steno.exe" (dir "src-tauri\target\x86_64-pc-windows-msvc\release\steno.exe") else (echo "⚠️ Main executable not found")
+      shell: cmd
+
+    - name: Create portable package (Windows)
+      run: |
+        echo "=== Creating portable package ==="
+        if exist "src-tauri\target\x86_64-pc-windows-msvc\release\steno.exe" (
+          mkdir portable-steno
+          copy "src-tauri\target\x86_64-pc-windows-msvc\release\steno.exe" "portable-steno\"
+          echo. > "portable-steno\portable.txt"
+          echo Steno Portable Version > "portable-steno\README.txt"
+          echo This is a portable version of Steno. All data will be stored in this directory. >> "portable-steno\README.txt"
+          echo Create an empty "portable.txt" file to enable portable mode. >> "portable-steno\README.txt"
+          powershell Compress-Archive -Path "portable-steno" -DestinationPath "steno-portable-windows-x64.zip"
+          echo "✓ Portable package created"
+        ) else (
+          echo "❌ Cannot create portable package: executable not found"
+        )
+      shell: cmd
+
+    - name: Generate checksums (Windows)
+      run: |
+        echo "=== Generating checksums ==="
+        powershell -Command "
+        $files = Get-ChildItem -Path 'src-tauri\target\x86_64-pc-windows-msvc\release\bundle' -Recurse -Include '*.msi', '*.exe'
+        if (Test-Path 'steno-portable-windows-x64.zip') { $files += Get-ChildItem 'steno-portable-windows-x64.zip' }
+        foreach ($file in $files) {
+          $hash = Get-FileHash -Path $file.FullName -Algorithm SHA256
+          $relativePath = $file.FullName.Replace((Get-Location), '.')
+          Write-Output ($hash.Hash + '  ' + $relativePath) | Add-Content 'checksums.txt'
+        }
+        if (Test-Path 'checksums.txt') { Get-Content 'checksums.txt' }
+        "
+      shell: powershell
 
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
@@ -91,7 +134,19 @@ jobs:
         path: |
           src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
           src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          steno-portable-windows-x64.zip
+          checksums.txt
         retention-days: 30
+
+    - name: Upload Windows installer logs (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build-logs
+        path: |
+          src-tauri/target/x86_64-pc-windows-msvc/release/build/**/*.log
+          src-tauri/target/**/*.log
+        retention-days: 7
 
   build-macos:
     runs-on: macos-latest
