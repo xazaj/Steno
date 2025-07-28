@@ -12,11 +12,11 @@ fn main() {
     
     // Platform-specific library paths
     let (whisper_lib_path, ggml_lib_path, ggml_blas_path, ggml_metal_path) = if target_os == "windows" {
-        // Windows uses different build structure
+        // Windows uses different build structure with Visual Studio
         let whisper_lib = whisper_cpp_path.join("build").join("src").join("Release");
         let ggml_lib = whisper_cpp_path.join("build").join("ggml").join("src").join("Release");
-        let ggml_blas = ggml_lib.join("ggml-blas");
-        let ggml_metal = ggml_lib.join("ggml-metal");
+        let ggml_blas = whisper_cpp_path.join("build").join("ggml").join("src").join("ggml-blas").join("Release");
+        let ggml_metal = whisper_cpp_path.join("build").join("ggml").join("src").join("ggml-metal").join("Release");
         (whisper_lib, ggml_lib, ggml_blas, ggml_metal)
     } else {
         // Unix-like systems
@@ -34,10 +34,22 @@ fn main() {
         whisper_lib_path.join("libwhisper.a")
     };
     
+    let ggml_blas_lib = if target_os == "windows" {
+        ggml_blas_path.join("ggml-blas.lib")
+    } else {
+        ggml_blas_path.join("libggml-blas.a")
+    };
+    
+    // Validate core libraries exist
     if !whisper_static_lib.exists() {
         panic!("Whisper static library not found at: {}\nPlease build whisper.cpp first using:\n  cd src-tauri/lib/whisper.cpp\n  mkdir -p build\n  cd build\n  cmake .. -DCMAKE_BUILD_TYPE=Release{}\n  cmake --build . --config Release", 
                whisper_static_lib.display(),
                if target_os == "windows" { " -G \"Visual Studio 17 2022\" -A x64" } else { "" });
+    }
+    
+    if !ggml_blas_lib.exists() {
+        panic!("GGML BLAS library not found at: {}\nThis suggests whisper.cpp was not built completely.\nPlease ensure the build completed successfully.", 
+               ggml_blas_lib.display());
     }
 
     // Add library search paths
@@ -45,9 +57,13 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", ggml_lib_path.display());
     println!("cargo:rustc-link-search=native={}", ggml_blas_path.display());
     
-    // Only add metal path on macOS
+    // Platform-specific additional search paths
     if target_os == "macos" {
         println!("cargo:rustc-link-search=native={}", ggml_metal_path.display());
+    } else if target_os == "windows" {
+        // Add additional Windows-specific paths that might contain libraries
+        let ggml_cpu_path = whisper_cpp_path.join("build").join("ggml").join("src").join("ggml-cpu").join("Release");
+        println!("cargo:rustc-link-search=native={}", ggml_cpu_path.display());
     }
 
     // Core whisper.cpp libraries (all platforms)

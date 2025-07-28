@@ -27,16 +27,46 @@ cmake --build . --config Release
 
 echo whisper.cpp build completed successfully!
 
-REM Verify essential files exist (check both possible locations)
-if exist "src\libwhisper.a" (
-    echo Build verification passed: Found libwhisper.a
-) else if exist "src\Release\whisper.lib" (
-    echo Build verification passed: Found whisper.lib
+REM Verify essential files exist
+echo Verifying build artifacts...
+
+if exist "src\Release\whisper.lib" (
+    echo ✓ Found whisper.lib
 ) else (
-    echo Error: Neither libwhisper.a nor whisper.lib found after build
-    echo Listing build contents:
-    dir /s src
+    echo ✗ Missing whisper.lib
+    set BUILD_ERROR=1
+)
+
+if exist "ggml\src\Release\ggml-base.lib" (
+    echo ✓ Found ggml-base.lib
+) else (
+    echo ✗ Missing ggml-base.lib
+    set BUILD_ERROR=1
+)
+
+if exist "ggml\src\ggml-blas\Release\ggml-blas.lib" (
+    echo ✓ Found ggml-blas.lib
+) else (
+    echo ✗ Missing ggml-blas.lib
+    set BUILD_ERROR=1
+)
+
+if exist "ggml\src\Release\ggml.lib" (
+    echo ✓ Found ggml.lib
+) else (
+    echo ✗ Missing ggml.lib
+    set BUILD_ERROR=1
+)
+
+if defined BUILD_ERROR (
+    echo.
+    echo Build verification failed! Some libraries are missing.
+    echo Listing build directory structure:
+    tree /f
     exit /b 1
+) else (
+    echo.
+    echo ✓ Build verification passed - all required libraries found
 )
 
 echo Build verification passed. You can now build the Tauri application.

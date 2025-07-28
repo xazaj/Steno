@@ -94,6 +94,14 @@ jobs:
           cmake --build . --config Release --parallel
         shell: cmd
 
+      - name: Verify whisper.cpp build artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          cd src-tauri/lib/whisper.cpp/build
+          echo "=== Checking library locations ==="
+          dir /s *.lib
+        shell: cmd
+
       - name: Build whisper.cpp library (Unix)
         if: matrix.platform != 'windows-latest'
         run: |

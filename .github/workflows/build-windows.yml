@@ -67,6 +67,18 @@ jobs:
         cmake --build . --config Release --parallel
       shell: cmd
 
+    - name: Verify whisper.cpp build artifacts (Windows)
+      run: |
+        cd src-tauri/lib/whisper.cpp/build
+        echo "=== Build directory structure ==="
+        dir /s *.lib
+        echo "=== Checking specific library locations ==="
+        if exist "src\Release\whisper.lib" (echo "✓ Found whisper.lib") else (echo "✗ Missing whisper.lib")
+        if exist "ggml\src\Release\ggml-base.lib" (echo "✓ Found ggml-base.lib") else (echo "✗ Missing ggml-base.lib")
+        if exist "ggml\src\ggml-blas\Release\ggml-blas.lib" (echo "✓ Found ggml-blas.lib") else (echo "✗ Missing ggml-blas.lib")
+        if exist "ggml\src\Release\ggml.lib" (echo "✓ Found ggml.lib") else (echo "✗ Missing ggml.lib")
+      shell: cmd
+
     - name: Build Tauri app for Windows
       run: npm run build:windows
       env:
