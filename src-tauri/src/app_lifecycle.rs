@@ -9,7 +9,15 @@ pub struct AppLifecycleManager {
 
 impl AppLifecycleManager {
     pub fn new(app_handle: &tauri::AppHandle) -> Result<Self, rusqlite::Error> {
-        let db_manager = Arc::new(DatabaseManager::new(app_handle)?);
+        println!("🔧 开始初始化数据库管理器...");
+        let db_manager = DatabaseManager::new(app_handle)?;
+        
+        // 确保数据库被正确初始化
+        println!("🔧 正在初始化数据库连接和表结构...");
+        let _conn = db_manager.initialize_database()?;
+        println!("✅ 数据库初始化完成");
+        
+        let db_manager = Arc::new(db_manager);
         Ok(Self { db_manager })
     }
 
@@ -164,12 +172,26 @@ impl AppLifecycleManager {
 
 /// 在应用启动时调用的初始化函数
 pub async fn initialize_app(app_handle: &tauri::AppHandle) -> Result<(), String> {
+    // 1. 初始化数据库生命周期管理器
     let lifecycle_manager = AppLifecycleManager::new(app_handle)
         .map_err(|e| format!("初始化生命周期管理器失败: {}", e))?;
 
     lifecycle_manager.on_app_start().await?;
 
-    // 将生命周期管理器存储到应用状态中，以便在应用关闭时使用
+    // 2. 初始化存储服务
+    if let Some(storage_state) = app_handle.try_state::<crate::storage_commands::StorageState>() {
+        println!("🔧 正在初始化存储服务...");
+        storage_state.init(app_handle)
+            .map_err(|e| {
+                eprintln!("❌ 存储服务初始化失败: {}", e);
+                format!("初始化存储服务失败: {}", e)
+            })?;
+        println!("✅ 存储服务初始化完成");
+    } else {
+        eprintln!("⚠️ 未找到存储状态，跳过存储服务初始化");
+    }
+
+    // 3. 将生命周期管理器存储到应用状态中，以便在应用关闭时使用
     app_handle.manage(lifecycle_manager);
 
     Ok(())
