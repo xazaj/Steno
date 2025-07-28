@@ -85,10 +85,9 @@ fn main() {
         println!("cargo:rustc-link-lib=static=ggml-blas");
     }
 
-    // Force static linking for all platforms
-    println!("cargo:rustc-link-arg=-static-libgcc");
-    if target_os == "windows" {
-        println!("cargo:rustc-link-arg=-static");
+    // Force static linking for non-Windows platforms
+    if target_os != "windows" {
+        println!("cargo:rustc-link-arg=-static-libgcc");
     }
     
     // Platform-specific linking
@@ -115,10 +114,7 @@ fn main() {
             println!("cargo:rustc-link-lib=uuid");
             println!("cargo:rustc-link-lib=comdlg32");
             println!("cargo:rustc-link-lib=advapi32");
-            // C++ runtime libraries
-            println!("cargo:rustc-link-lib=static=libcmt");
-            println!("cargo:rustc-link-lib=static=libvcruntime");
-            println!("cargo:rustc-link-lib=static=libucrt");
+            // Let Rust handle CRT linking automatically with +crt-static
         },
         "linux" => {
             // Linux-specific libraries
