@@ -816,15 +816,24 @@ pub fn run() {
             model_management::get_current_model
         ])
         .setup(|app| {
-            // 在应用启动时初始化数据库管理
+            // 同步初始化关键组件，确保应用就绪前完成初始化
             let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(e) = app_lifecycle::initialize_app(&app_handle).await {
+            
+            // 使用 block_on 确保初始化在应用启动前完成
+            match tauri::async_runtime::block_on(app_lifecycle::initialize_app(&app_handle)) {
+                Ok(_) => {
+                    println!("✅ 应用初始化成功完成");
+                    Ok(())
+                },
+                Err(e) => {
                     eprintln!("❗ 应用初始化失败: {}", e);
-                    // 可以选择显示错误对话框或记录错误
+                    // 应用启动失败，返回错误
+                    Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("应用初始化失败: {}", e)
+                    )))
                 }
-            });
-            Ok(())
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -25,7 +25,37 @@ impl StorageState {
         let state = self.0.lock().unwrap();
         match state.as_ref() {
             Some(storage) => f(storage).map_err(|e| format!("Storage error: {}", e)),
-            None => Err("Storage not initialized".to_string()),
+            None => Err("Storage not initialized. Please ensure the application has fully started.".to_string()),
+        }
+    }
+    
+    /// 安全的存储访问，如果未初始化则尝试自动初始化
+    pub fn with_storage_auto_init<F, R>(&self, app_handle: &AppHandle, f: F) -> Result<R, String>
+    where
+        F: FnOnce(&StorageService) -> rusqlite::Result<R>,
+    {
+        let mut state = self.0.lock().unwrap();
+        match state.as_ref() {
+            Some(_storage) => {
+                drop(state); // 释放锁
+                self.with_storage(f)
+            },
+            None => {
+                // 尝试自动初始化
+                println!("⚠️ 存储服务未初始化，尝试自动初始化...");
+                match crate::storage::StorageService::new(app_handle) {
+                    Ok(storage) => {
+                        *state = Some(storage);
+                        drop(state); // 释放锁
+                        println!("✅ 存储服务自动初始化成功");
+                        self.with_storage(f)
+                    },
+                    Err(e) => {
+                        eprintln!("❌ 存储服务自动初始化失败: {}", e);
+                        Err(format!("Storage auto-initialization failed: {}", e))
+                    }
+                }
+            }
         }
     }
 }
@@ -56,9 +86,10 @@ pub async fn get_transcription_record(
 
 #[tauri::command]
 pub async fn get_all_transcription_records(
+    app_handle: AppHandle,
     storage_state: State<'_, StorageState>,
 ) -> Result<Vec<TranscriptionRecord>, String> {
-    storage_state.with_storage(|storage| storage.get_all_records())
+    storage_state.with_storage_auto_init(&app_handle, |storage| storage.get_all_records())
 }
 
 #[tauri::command]
