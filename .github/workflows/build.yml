@@ -187,6 +187,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.arch }}-whisper-
 
+      - name: Cache NPM dependencies (with version-aware key)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('package.json') }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-${{ hashFiles('package.json') }}-
+            ${{ runner.os }}-npm-
+
       # === STEP 6: whisper.cpp Build (Robust) ===
       - name: Build whisper.cpp library
         timeout-minutes: 20
@@ -296,11 +307,11 @@ jobs:
           echo "✅ All required build artifacts verified"
         shell: bash
 
-      # === STEP 7: Frontend Build (Robust Installation) ===
-      - name: Install and verify frontend dependencies
-        timeout-minutes: 20
+      # === STEP 7: Frontend Dependencies (Aligned with Development Environment) ===
+      - name: Install frontend dependencies
+        timeout-minutes: 15
         run: |
-          echo "Installing npm dependencies with verification..."
+          echo "Installing npm dependencies using development environment versions..."
           
           # Function to verify critical dependencies
           verify_deps() {
@@ -311,7 +322,8 @@ jobs:
             
             for dep in "${CRITICAL_DEPS[@]}"; do
               if [ -f "node_modules/.bin/$dep" ] || [ -d "node_modules/$dep" ]; then
-                echo "✅ $dep: Found"
+                VERSION=$(node -e "try { console.log(require('./node_modules/$dep/package.json').version); } catch(e) { console.log('unknown'); }")
+                echo "✅ $dep: Found (v$VERSION)"
               else
                 echo "❌ $dep: Missing"
                 MISSING_DEPS+=("$dep")
@@ -327,34 +339,34 @@ jobs:
             fi
           }
           
-          # Try different installation strategies
+          # Try npm ci first (most reliable when package.json and package-lock.json are in sync)
           INSTALL_SUCCESS=false
           
-          # Strategy 1: Clean install
-          echo "Strategy 1: Clean npm ci..."
+          echo "Strategy 1: Clean npm ci (recommended for CI)..."
           if npm ci --no-audit --no-fund && verify_deps; then
             echo "✅ Strategy 1 successful"
             INSTALL_SUCCESS=true
           else
-            echo "❌ Strategy 1 failed"
-            rm -rf node_modules package-lock.json 2>/dev/null || true
+            echo "❌ Strategy 1 failed - package.json and package-lock.json may be out of sync"
           fi
           
-          # Strategy 2: Legacy peer deps
+          # Fallback to npm install if npm ci fails
           if [ "$INSTALL_SUCCESS" = false ]; then
             echo "Strategy 2: npm install with legacy peer deps..."
+            rm -rf node_modules 2>/dev/null || true
             if npm install --no-audit --no-fund --legacy-peer-deps && verify_deps; then
               echo "✅ Strategy 2 successful"
               INSTALL_SUCCESS=true
             else
               echo "❌ Strategy 2 failed"
-              rm -rf node_modules package-lock.json 2>/dev/null || true
             fi
           fi
           
-          # Strategy 3: Force install
+          # Last resort: force install
           if [ "$INSTALL_SUCCESS" = false ]; then
-            echo "Strategy 3: npm install with force..."
+            echo "Strategy 3: Force install..."
+            rm -rf node_modules 2>/dev/null || true
+            npm cache clean --force 2>/dev/null || true
             if npm install --no-audit --no-fund --force && verify_deps; then
               echo "✅ Strategy 3 successful"
               INSTALL_SUCCESS=true
@@ -363,30 +375,32 @@ jobs:
             fi
           fi
           
-          # Strategy 4: Manual critical dependency installation with compatible versions
-          if [ "$INSTALL_SUCCESS" = false ]; then
-            echo "Strategy 4: Installing critical dependencies manually with compatible versions..."
-            npm install --no-audit --no-fund --legacy-peer-deps vite@^5.4.0 @tauri-apps/cli@^2.0.0 typescript@^5.0.0
-            if verify_deps; then
-              echo "✅ Strategy 4 successful"
-              INSTALL_SUCCESS=true
-            else
-              echo "❌ Strategy 4 failed"
-            fi
-          fi
-          
           if [ "$INSTALL_SUCCESS" = false ]; then
             echo "❌ All installation strategies failed"
+            echo "=== Debug Information ==="
             echo "Package.json devDependencies:"
-            node -e "console.log(JSON.stringify(require('./package.json').devDependencies, null, 2))"
+            node -e "console.log(JSON.stringify(require('./package.json').devDependencies, null, 2))" 2>/dev/null || echo "Failed to read package.json"
+            echo "NPM version: $(npm --version)"
+            echo "Node version: $(node --version)"
+            echo "Available disk space: $(df -h . | tail -1 | awk '{print $4}')"
             exit 1
           fi
           
-          echo "✅ Dependencies installed and verified successfully"
+          echo "✅ Dependencies installed successfully"
           
-          # Show final verification
-          echo "=== Final Dependency Status ==="
-          ls -la node_modules/.bin/ | grep -E "(vite|tauri|tsc)" || echo "No matching binaries found"
+          # Show installed versions for verification
+          echo "=== Installed Versions ==="
+          node -e "
+            const deps = ['vite', '@tauri-apps/cli', 'typescript'];
+            deps.forEach(dep => {
+              try {
+                const version = require(\`./node_modules/\${dep}/package.json\`).version;
+                console.log(\`\${dep}: \${version}\`);
+              } catch(e) {
+                console.log(\`\${dep}: not found\`);
+              }
+            });
+          "
         shell: bash
 
       - name: Build frontend
