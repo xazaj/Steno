@@ -63,15 +63,53 @@ jobs:
             git submodule update --init --recursive --force
           fi
           
-          # Critical validation
+          # Critical validation with detailed reporting
+          echo "=== Validating whisper.cpp submodule ==="
+          
+          WHISPER_ROOT="src-tauri/lib/whisper.cpp"
+          
+          # Check if whisper.cpp directory exists
+          if [ ! -d "$WHISPER_ROOT" ]; then
+            echo "❌ whisper.cpp directory not found: $WHISPER_ROOT"
+            exit 1
+          fi
+          
+          # Show directory structure for debugging
+          echo "whisper.cpp directory structure:"
+          ls -la "$WHISPER_ROOT" | head -10
+          
+          # Critical files validation
           CRITICAL_FILES=(
-            "src-tauri/lib/whisper.cpp/CMakeLists.txt"
-            "src-tauri/lib/whisper.cpp/whisper.h"
+            "$WHISPER_ROOT/CMakeLists.txt"
+            "$WHISPER_ROOT/include/whisper.h"
           )
           
+          CRITICAL_DIRS=(
+            "$WHISPER_ROOT/src"
+            "$WHISPER_ROOT/include"
+          )
+          
+          # Validate critical files
+          echo "Checking critical files..."
           for file in "${CRITICAL_FILES[@]}"; do
-            if [ ! -f "$file" ]; then
-              echo "❌ Critical file missing: $file"
+            if [ -f "$file" ]; then
+              echo "✅ Found: $file"
+            else
+              echo "❌ Missing: $file"
+              echo "Available files in $(dirname "$file"):"
+              ls -la "$(dirname "$file")" 2>/dev/null || echo "Directory doesn't exist"
+              exit 1
+            fi
+          done
+          
+          # Validate critical directories
+          echo "Checking critical directories..."
+          for dir in "${CRITICAL_DIRS[@]}"; do
+            if [ -d "$dir" ]; then
+              FILE_COUNT=$(find "$dir" -type f | wc -l)
+              echo "✅ Found: $dir ($FILE_COUNT files)"
+            else
+              echo "❌ Missing: $dir"
               exit 1
             fi
           done
