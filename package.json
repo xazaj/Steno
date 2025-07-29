@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npx tsc && vite build",
     "preview": "vite preview",
     "tauri": "npx tauri",
     "tauri:dev": "npx tauri dev",
@@ -17,9 +17,9 @@
     "build:release": "npx tauri build",
     "prepare-whisper": "bash ./build-whisper.sh",
     "prepare-whisper:win": "./build-whisper.bat",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --fix",
-    "type-check": "tsc --noEmit",
+    "lint": "npx eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "npx eslint . --ext ts,tsx --fix",
+    "type-check": "npx tsc --noEmit",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {

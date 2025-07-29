@@ -157,18 +157,46 @@ jobs:
           npm ci --no-audit --no-fund
           echo "✅ Dependencies installed"
 
+      - name: Verify TypeScript and build tools
+        run: |
+          echo "=== Verifying build tools ==="
+          echo "TypeScript version:"
+          npx tsc --version || echo "❌ TypeScript not found"
+          echo "ESLint version:"
+          npx eslint --version || echo "❌ ESLint not found"
+          echo "Vite version:"
+          npx vite --version || echo "❌ Vite not found"
+          echo "✅ Build tools verified"
+        shell: bash
+
       - name: Build frontend
         timeout-minutes: 10
         run: |
           echo "Building frontend..."
-          npm run build
-          echo "✅ Frontend build completed"
+          echo "Step 1: Running TypeScript compilation..."
+          npx tsc
+          if [ $? -ne 0 ]; then
+            echo "❌ TypeScript compilation failed"
+            exit 1
+          fi
+          echo "✅ TypeScript compilation successful"
+          
+          echo "Step 2: Running Vite build..."
+          npx vite build
+          if [ $? -ne 0 ]; then
+            echo "❌ Vite build failed"
+            exit 1
+          fi
+          echo "✅ Frontend build completed successfully"
+        shell: bash
 
       - name: Verify frontend build
         run: |
           if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
             echo "✅ Frontend build output verified"
-            ls -la dist/ | head -5
+            echo "Build output summary:"
+            ls -la dist/ | head -10
+            echo "Total files in dist: $(find dist -type f | wc -l)"
           else
             echo "❌ Frontend build failed - dist directory empty or missing"
             exit 1
