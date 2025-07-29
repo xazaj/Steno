@@ -307,26 +307,62 @@ jobs:
           echo "✅ All required build artifacts verified"
         shell: bash
 
-      # === STEP 7: Install Frontend Dependencies ===
+      # === STEP 7: Install Frontend Dependencies (Including DevDependencies) ===
       - name: Install frontend dependencies
         timeout-minutes: 15
         run: |
-          echo "Installing npm dependencies..."
+          echo "Installing npm dependencies including devDependencies..."
+          echo "Note: NODE_ENV is set to production, but we need devDependencies for build tools"
           
-          # Try npm ci first (recommended for CI)
-          if npm ci --no-audit --no-fund; then
-            echo "✅ Dependencies installed with npm ci"
-          elif npm install --no-audit --no-fund --legacy-peer-deps; then
-            echo "✅ Dependencies installed with npm install"
+          # Strategy 1: npm ci with explicit devDependencies inclusion
+          echo "Strategy 1: npm ci with --include=dev..."
+          if npm ci --no-audit --no-fund --include=dev; then
+            echo "✅ Strategy 1 successful: npm ci with devDependencies"
           else
-            echo "❌ Failed to install dependencies"
+            echo "❌ Strategy 1 failed, trying alternative..."
+            
+            # Strategy 2: npm install with explicit devDependencies
+            echo "Strategy 2: npm install with --include=dev..."
+            rm -rf node_modules 2>/dev/null || true
+            if npm install --no-audit --no-fund --include=dev --legacy-peer-deps; then
+              echo "✅ Strategy 2 successful: npm install with devDependencies"
+            else
+              echo "❌ Strategy 2 failed, trying with NODE_ENV override..."
+              
+              # Strategy 3: Temporarily override NODE_ENV
+              echo "Strategy 3: Override NODE_ENV for installation..."
+              rm -rf node_modules 2>/dev/null || true
+              if NODE_ENV=development npm install --no-audit --no-fund --legacy-peer-deps; then
+                echo "✅ Strategy 3 successful: NODE_ENV override"
+              else
+                echo "❌ All strategies failed"
+                exit 1
+              fi
+            fi
+          fi
+          
+          # Verify critical build tools are installed
+          echo "=== Verifying Build Tools Installation ==="
+          MISSING_TOOLS=()
+          
+          for tool in "vite" "@tauri-apps/cli" "typescript"; do
+            if [ -d "node_modules/$tool" ]; then
+              VERSION=$(node -e "try { console.log(require('./node_modules/$tool/package.json').version); } catch(e) { console.log('unknown'); }")
+              echo "✅ $tool: $VERSION"
+            else
+              echo "❌ $tool: NOT INSTALLED"
+              MISSING_TOOLS+=("$tool")
+            fi
+          done
+          
+          if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
+            echo "❌ Missing critical build tools: ${MISSING_TOOLS[*]}"
+            echo "This indicates devDependencies were not properly installed"
             exit 1
           fi
           
-          # Show some basic info (no complex verification)
-          echo "=== Installation Summary ==="
-          echo "Node modules directory: $([ -d node_modules ] && echo 'EXISTS' || echo 'MISSING')"
-          echo "Installed packages: $(find node_modules -name 'package.json' -mindepth 2 -maxdepth 2 | wc -l 2>/dev/null || echo 'unknown')"
+          echo "✅ All build tools verified successfully"
+          echo "Total packages: $(find node_modules -name 'package.json' -mindepth 2 -maxdepth 2 | wc -l 2>/dev/null || echo 'unknown')"
         shell: bash
 
       - name: Build frontend
@@ -334,9 +370,9 @@ jobs:
         run: |
           echo "=== Building Frontend ==="
           
-          # Direct node call to avoid npx/PATH issues completely
-          echo "Using direct node call to vite..."
-          node node_modules/vite/bin/vite.js build
+          # Now that devDependencies are properly installed, use npm script
+          echo "Building with npm run build..."
+          npm run build
           
           # Verify build output
           if [ ! -d "dist" ]; then
