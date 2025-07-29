@@ -296,16 +296,43 @@ jobs:
           echo "✅ All required build artifacts verified"
         shell: bash
 
-      # === STEP 7: Frontend Build (Simplified & Robust) ===
+      # === STEP 7: Frontend Build (Streamlined) ===
       - name: Install frontend dependencies
         timeout-minutes: 10
         run: |
           echo "Installing npm dependencies..."
-          if ! npm ci --no-audit --no-fund; then
+          if ! npm ci --no-audit --no-fund --legacy-peer-deps; then
             echo "❌ npm ci failed"
-            exit 1
+            echo "Trying with --legacy-peer-deps..."
+            if ! npm install --no-audit --no-fund --legacy-peer-deps; then
+              echo "❌ npm install also failed"
+              exit 1
+            fi
           fi
           echo "✅ Dependencies installed successfully"
+        shell: bash
+
+      - name: Verify essential build tools
+        run: |
+          echo "=== Verifying Essential Build Tools ==="
+          
+          # Check TypeScript
+          if [ -f "./node_modules/.bin/tsc" ]; then
+            echo "✅ TypeScript: $(./node_modules/.bin/tsc --version)"
+          else
+            echo "❌ TypeScript not found"
+            exit 1
+          fi
+          
+          # Check Vite
+          if [ -f "./node_modules/.bin/vite" ]; then
+            echo "✅ Vite: $(./node_modules/.bin/vite --version)"
+          else
+            echo "❌ Vite not found"
+            exit 1
+          fi
+          
+          echo "✅ Essential build tools verified"
         shell: bash
 
       - name: Build frontend
@@ -316,6 +343,15 @@ jobs:
           # Use npm script directly (most reliable)
           if ! npm run build; then
             echo "❌ Frontend build failed"
+            echo "Checking for common issues..."
+            
+            # Check if TypeScript can be executed manually
+            if ./node_modules/.bin/tsc --version >/dev/null 2>&1; then
+              echo "TypeScript is available"
+            else
+              echo "TypeScript execution failed"
+            fi
+            
             exit 1
           fi
           
@@ -323,6 +359,7 @@ jobs:
           if [ ! -d "dist" ] || [ -z "$(ls -A dist 2>/dev/null)" ]; then
             echo "❌ Frontend build output verification failed"
             echo "Expected 'dist' directory with content"
+            echo "Current directory contents:"
             ls -la . || true
             exit 1
           fi
