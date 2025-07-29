@@ -121,7 +121,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Setup Rust
@@ -363,10 +363,10 @@ jobs:
             fi
           fi
           
-          # Strategy 4: Manual critical dependency installation
+          # Strategy 4: Manual critical dependency installation with compatible versions
           if [ "$INSTALL_SUCCESS" = false ]; then
-            echo "Strategy 4: Installing critical dependencies manually..."
-            npm install --no-audit --no-fund --legacy-peer-deps vite@latest @tauri-apps/cli@latest typescript@latest
+            echo "Strategy 4: Installing critical dependencies manually with compatible versions..."
+            npm install --no-audit --no-fund --legacy-peer-deps vite@^5.4.0 @tauri-apps/cli@^2.0.0 typescript@^5.0.0
             if verify_deps; then
               echo "✅ Strategy 4 successful"
               INSTALL_SUCCESS=true
