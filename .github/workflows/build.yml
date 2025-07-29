@@ -334,8 +334,9 @@ jobs:
         run: |
           echo "=== Building Frontend ==="
           
-          # Use npm run build (which now uses npx internally)
-          npm run build
+          # Direct node call to avoid npx/PATH issues completely
+          echo "Using direct node call to vite..."
+          node node_modules/vite/bin/vite.js build
           
           # Verify build output
           if [ ! -d "dist" ]; then
