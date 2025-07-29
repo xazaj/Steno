@@ -20,11 +20,80 @@ jobs:
     timeout-minutes: 60
     
     steps:
-    - name: Checkout repository
+    - name: Checkout repository (without submodules)
       uses: actions/checkout@v4
       with:
-        submodules: recursive
         token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Configure Git for better network handling
+      run: |
+        git config --global http.postBuffer 524288000
+        git config --global http.maxRequestBuffer 100M
+        git config --global core.compression 0
+        git config --global http.lowSpeedLimit 0
+        git config --global http.lowSpeedTime 999999
+      shell: bash
+        
+    - name: Initialize and update submodules with retry
+      timeout-minutes: 20
+      run: |
+        echo "Initializing submodules with enhanced retry logic..."
+        
+        # Initialize submodule configuration
+        git submodule init
+        
+        # Configure submodule URLs to use HTTPS with authentication
+        git config submodule."src-tauri/lib/whisper.cpp".url "https://github.com/ggerganov/whisper.cpp.git"
+        
+        for attempt in 1 2 3; do
+          echo "=== Attempt $attempt of 3 ==="
+          
+          # Sync submodule configuration
+          echo "Syncing submodule configuration..."
+          git submodule sync --recursive
+          
+          # Try to update submodules with progressively less restrictive options
+          echo "Attempting submodule update..."
+          
+          if git submodule update --init --recursive --force --checkout --progress; then
+            echo "✅ Submodules updated successfully!"
+            break
+          fi
+          
+          echo "❌ Attempt $attempt failed"
+          
+          if [ $attempt -lt 3 ]; then
+            echo "Cleaning up and retrying in 60 seconds..."
+            
+            # Clean up any partial clones
+            if [ -d "src-tauri/lib/whisper.cpp" ]; then
+              rm -rf "src-tauri/lib/whisper.cpp"
+            fi
+            
+            # Reset submodule state
+            git submodule deinit --force --all || true
+            git submodule init
+            git config submodule."src-tauri/lib/whisper.cpp".url "https://github.com/ggerganov/whisper.cpp.git"
+            
+            sleep 60
+          else
+            echo "❌ All attempts failed"
+            exit 1
+          fi
+        done
+        
+        # Verify the submodule is properly initialized
+        echo "=== Verifying submodule status ==="
+        git submodule status --recursive
+        
+        if [ -f "src-tauri/lib/whisper.cpp/CMakeLists.txt" ]; then
+          echo "✅ whisper.cpp submodule verified successfully"
+        else
+          echo "❌ whisper.cpp submodule verification failed"
+          exit 1
+        fi
+      shell: bash
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
