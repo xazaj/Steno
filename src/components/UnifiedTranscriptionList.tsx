@@ -130,19 +130,19 @@ const UnifiedTranscriptionList: React.FC<UnifiedTranscriptionListProps> = ({
     
     // 优先检查标签
     if (tags.includes('实时录音')) {
-      return '实时录音';
+      return '实时转录';
     }
     if (tags.includes('文件上传')) {
-      return '文件上传';
+      return '文件转录';
     }
     
     // 兼容存量数据：根据文件属性判断
     if (record.fileSize === 0 && (record.filePath === '' || !record.filePath)) {
-      return '实时录音';
+      return '实时转录';
     }
     
     // 默认为文件上传
-    return '文件上传';
+    return '文件转录';
   };
 
   // 高亮搜索关键词
@@ -457,7 +457,7 @@ const UnifiedTranscriptionList: React.FC<UnifiedTranscriptionListProps> = ({
                       {/* 来源类型显示 */}
                       <span className={cn(
                         "px-2 py-0.5 rounded text-[10px] font-medium tracking-tight",
-                        getSourceType(record) === '实时录音' 
+                        getSourceType(record) === '实时转录' 
                           ? "bg-green-50 text-green-600" 
                           : "bg-orange-50 text-orange-600"
                       )} style={{fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", system-ui, sans-serif'}}>
