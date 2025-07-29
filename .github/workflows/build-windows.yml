@@ -107,11 +107,44 @@ jobs:
         echo "Installing npm dependencies..."
         npm ci --no-audit --no-fund
         echo "Dependencies installed successfully"
+        
+    - name: Verify Tauri CLI installation
+      run: |
+        echo "Checking Tauri CLI installation..."
+        echo "Node modules Tauri CLI path:"
+        if exist "node_modules\.bin\tauri.cmd" (
+          echo "✅ Found Tauri CLI at node_modules\.bin\tauri.cmd"
+          "node_modules\.bin\tauri.cmd" --version
+        ) else (
+          echo "❌ Tauri CLI not found in node_modules\.bin"
+        )
+        
+        echo "NPX Tauri CLI test:"
+        npx tauri --version
+        
+        echo "Global PATH:"
+        echo %PATH%
+      shell: cmd
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: x86_64-pc-windows-msvc
+        
+    - name: Verify Rust installation
+      run: |
+        echo "Verifying Rust installation..."
+        rustc --version
+        cargo --version
+        rustup show
+        echo "Rust verification completed"
+      shell: cmd
+      
+    - name: Cache Rust dependencies
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: './src-tauri -> target'
+        cache-on-failure: true
 
     - name: Cache whisper.cpp build (Windows)
       uses: actions/cache@v4
@@ -170,12 +203,66 @@ jobs:
         if exist "ggml\src\Release\ggml.lib" (echo "✓ Found ggml.lib") else (echo "✗ Missing ggml.lib")
       shell: cmd
 
+    - name: Build frontend
+      timeout-minutes: 15
+      run: |
+        echo "Building frontend..."
+        npm run build
+        echo "Frontend build completed successfully"
+      shell: cmd
+      
+    - name: Verify frontend build
+      run: |
+        echo "Verifying frontend build output..."
+        if exist "dist" (
+          echo "✅ Frontend dist directory exists"
+          dir "dist"
+        ) else (
+          echo "❌ Frontend dist directory not found"
+          exit /b 1
+        )
+      shell: cmd
+
     - name: Build Tauri app for Windows
       timeout-minutes: 30
       run: |
         echo "Starting Tauri build for Windows..."
+        echo "Current directory: %CD%"
+        echo "Checking Tauri CLI availability..."
+        
+        REM Try different methods to run Tauri
+        set "TAURI_FOUND=0"
+        
+        REM Method 1: Direct node_modules path
+        if exist "node_modules\.bin\tauri.cmd" (
+          echo "Using node_modules\.bin\tauri.cmd"
+          "node_modules\.bin\tauri.cmd" build --target x86_64-pc-windows-msvc
+          set "TAURI_FOUND=1"
+          goto :build_success
+        )
+        
+        REM Method 2: NPX
+        echo "Trying npx tauri..."
+        npx tauri build --target x86_64-pc-windows-msvc
+        if %ERRORLEVEL% equ 0 (
+          set "TAURI_FOUND=1"
+          goto :build_success
+        )
+        
+        REM Method 3: npm run script
+        echo "Trying npm run build:windows..."
         npm run build:windows
-        echo "Tauri build completed successfully"
+        if %ERRORLEVEL% equ 0 (
+          set "TAURI_FOUND=1"
+          goto :build_success
+        )
+        
+        echo "❌ All Tauri build methods failed"
+        exit /b 1
+        
+        :build_success
+        echo "✅ Tauri build completed successfully"
+      shell: cmd
       env:
         RUST_BACKTRACE: 1
         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -238,6 +325,28 @@ jobs:
           checksums.txt
         retention-days: 30
 
+    - name: Debug build failure (on failure)
+      if: failure()
+      continue-on-error: true
+      run: |
+        echo "=== Build failure debugging ==="
+        echo "Current directory:"
+        cd
+        echo "Directory contents:"
+        dir
+        echo "src-tauri directory:"
+        if exist "src-tauri" (dir "src-tauri") else (echo "src-tauri not found")
+        echo "target directory:"
+        if exist "src-tauri\\target" (dir "src-tauri\\target") else (echo "target not found")
+        echo "Node modules:"
+        if exist "node_modules" (dir "node_modules\\.bin\\tauri*") else (echo "node_modules not found")
+        echo "npm list tauri:"
+        npm list @tauri-apps/cli || echo "Tauri CLI not found in npm list"
+        echo "Environment variables:"
+        echo "PATH=%PATH%"
+        echo "NODE_ENV=%NODE_ENV%"
+      shell: cmd
+
     - name: Upload Windows installer logs (on failure)
       if: failure()
       uses: actions/upload-artifact@v4
@@ -246,6 +355,8 @@ jobs:
         path: |
           src-tauri/target/x86_64-pc-windows-msvc/release/build/**/*.log
           src-tauri/target/**/*.log
+          src-tauri/Cargo.lock
+          Cargo.lock
         retention-days: 7
 
   build-macos:

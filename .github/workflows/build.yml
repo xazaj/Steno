@@ -140,6 +140,7 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+          cache-on-failure: true
 
       - name: Cache whisper.cpp build
         uses: actions/cache@v4
@@ -240,11 +241,20 @@ jobs:
           npm run build
           echo "Frontend build completed successfully"
 
+      - name: Verify Tauri CLI (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Checking Tauri CLI installation..."
+          npx tauri --version
+          echo "Tauri CLI verified"
+        shell: bash
+
       - name: Build Tauri application
         timeout-minutes: 45
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUST_BACKTRACE: 1
         with:
           args: ${{ matrix.args }}
 
