@@ -49,21 +49,34 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      # === STEP 2: Submodule Initialization (Simplified) ===
+      # === STEP 2: Submodule Initialization (Robust) ===
       - name: Initialize submodules
         timeout-minutes: 10
         run: |
           echo "Initializing submodules..."
-          git submodule update --init --recursive --depth 1
           
-          # Verify critical files exist
-          if [ ! -f "src-tauri/lib/whisper.cpp/CMakeLists.txt" ]; then
-            echo "❌ whisper.cpp submodule missing critical files"
-            echo "Attempting full clone..."
+          # Try fast clone first
+          if git submodule update --init --recursive --depth 1; then
+            echo "✅ Fast submodule initialization successful"
+          else
+            echo "⚠️ Fast initialization failed, trying full clone..."
             git submodule update --init --recursive --force
           fi
           
-          echo "✅ Submodules initialized successfully"
+          # Critical validation
+          CRITICAL_FILES=(
+            "src-tauri/lib/whisper.cpp/CMakeLists.txt"
+            "src-tauri/lib/whisper.cpp/whisper.h"
+          )
+          
+          for file in "${CRITICAL_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Critical file missing: $file"
+              exit 1
+            fi
+          done
+          
+          echo "✅ Submodules initialized and verified"
         shell: bash
 
       # === STEP 3: Tool Setup ===
@@ -84,7 +97,44 @@ jobs:
         with:
           arch: x64
 
-      # === STEP 4: Caching ===
+      # === STEP 4: Enhanced Tool Verification ===
+      - name: Verify all required tools
+        run: |
+          echo "=== Comprehensive Tool Verification ==="
+          
+          # Core tools (must exist)
+          REQUIRED_TOOLS=("node" "npm" "rustc" "cargo")
+          for tool in "${REQUIRED_TOOLS[@]}"; do
+            if command -v "$tool" >/dev/null 2>&1; then
+              echo "✅ $tool: $(command -v "$tool") - $("$tool" --version | head -1)"
+            else
+              echo "❌ $tool: NOT FOUND"
+              exit 1
+            fi
+          done
+          
+          # Platform-specific tools
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            if command -v cl >/dev/null 2>&1; then
+              echo "✅ MSVC compiler: $(cl 2>&1 | head -1 | tr -d '\r\n')"
+            else
+              echo "❌ MSVC compiler not found"
+              exit 1
+            fi
+          fi
+          
+          # CMake verification
+          if command -v cmake >/dev/null 2>&1; then
+            echo "✅ CMake: $(cmake --version | head -1)"
+          else
+            echo "❌ CMake not found"
+            exit 1
+          fi
+          
+          echo "✅ All required tools verified"
+        shell: bash
+
+      # === STEP 5: Caching (Enhanced) ===
       - name: Cache Rust dependencies
         uses: swatinem/rust-cache@v2
         with:
@@ -95,124 +145,157 @@ jobs:
         uses: actions/cache@v4
         with:
           path: src-tauri/lib/whisper.cpp/build
-          key: ${{ runner.os }}-${{ matrix.arch }}-whisper-${{ hashFiles('src-tauri/lib/whisper.cpp/CMakeLists.txt') }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-whisper-${{ hashFiles('src-tauri/lib/whisper.cpp/**/*.{cpp,h,hpp,c}', 'src-tauri/lib/whisper.cpp/CMakeLists.txt', 'src-tauri/lib/whisper.cpp/**/CMakeLists.txt') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.arch }}-whisper-
 
-      # === STEP 5: Tool Verification ===
-      - name: Verify build tools
-        run: |
-          echo "=== Tool Verification ==="
-          node --version
-          npm --version
-          rustc --version
-          cargo --version
-          cmake --version || echo "CMake not found"
-        shell: bash
-
-      # === STEP 6: whisper.cpp Build (Simplified) ===
+      # === STEP 6: whisper.cpp Build (Robust) ===
       - name: Build whisper.cpp library
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           echo "Building whisper.cpp..."
-          cd src-tauri/lib/whisper.cpp
           
-          # Create build directory
-          mkdir -p build
-          cd build
-          
-          # Configure and build based on platform
-          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            echo "Configuring for Windows..."
-            cmake .. -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022" -A x64 -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
-            cmake --build . --config Release --parallel 4
-          else
-            echo "Configuring for Unix..."
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_STATIC=ON
-            cmake --build . --config Release --parallel 4
+          # Navigate to whisper.cpp directory
+          WHISPER_DIR="src-tauri/lib/whisper.cpp"
+          if [ ! -d "$WHISPER_DIR" ]; then
+            echo "❌ whisper.cpp directory not found"
+            exit 1
           fi
           
-          echo "✅ whisper.cpp build completed"
+          cd "$WHISPER_DIR"
+          
+          # Create and enter build directory
+          BUILD_DIR="build"
+          mkdir -p "$BUILD_DIR"
+          cd "$BUILD_DIR"
+          
+          # Platform-specific build configuration
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            echo "=== Windows Build Configuration ==="
+            
+            # CMake configuration with robust error handling
+            echo "Running CMake configuration..."
+            if ! cmake .. \
+              -DCMAKE_BUILD_TYPE=Release \
+              -G "Visual Studio 17 2022" \
+              -A x64 \
+              -DBUILD_SHARED_LIBS=OFF \
+              -DGGML_STATIC=ON \
+              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded; then
+              echo "❌ CMake configuration failed"
+              echo "Available generators:"
+              cmake --help | grep -A 20 "Generators"
+              exit 1
+            fi
+            
+            # Build with error handling
+            echo "Running CMake build..."
+            if ! cmake --build . --config Release --parallel 2 --verbose; then
+              echo "❌ CMake build failed"
+              exit 1
+            fi
+            
+          else
+            echo "=== Unix Build Configuration ==="
+            
+            # CMake configuration
+            if ! cmake .. \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_SHARED_LIBS=OFF \
+              -DGGML_STATIC=ON; then
+              echo "❌ CMake configuration failed"
+              exit 1
+            fi
+            
+            # Build
+            if ! cmake --build . --config Release --parallel 2; then
+              echo "❌ CMake build failed"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ whisper.cpp build completed successfully"
         shell: bash
 
-      - name: Verify whisper.cpp artifacts
+      - name: Verify whisper.cpp build artifacts
         run: |
-          echo "=== Verifying whisper.cpp build artifacts ==="
-          cd src-tauri/lib/whisper.cpp/build
+          echo "=== Verifying whisper.cpp Build Artifacts ==="
+          cd "src-tauri/lib/whisper.cpp/build"
           
+          # Platform-specific verification
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            find . -name "*.lib" -type f | head -10
+            EXPECTED_LIBS=("whisper.lib" "ggml.lib")
+            echo "Looking for Windows libraries..."
+            
+            for lib in "${EXPECTED_LIBS[@]}"; do
+              if find . -name "$lib" -type f | grep -q .; then
+                LIB_PATH=$(find . -name "$lib" -type f | head -1)
+                echo "✅ Found: $lib at $LIB_PATH"
+              else
+                echo "❌ Missing: $lib"
+                echo "Available .lib files:"
+                find . -name "*.lib" -type f || echo "No .lib files found"
+                exit 1
+              fi
+            done
           else
-            find . -name "*.a" -type f | head -10
+            EXPECTED_LIBS=("libwhisper.a" "libggml.a")
+            echo "Looking for Unix libraries..."
+            
+            for lib in "${EXPECTED_LIBS[@]}"; do
+              if find . -name "$lib" -type f | grep -q .; then
+                LIB_PATH=$(find . -name "$lib" -type f | head -1)
+                echo "✅ Found: $lib at $LIB_PATH"
+              else
+                echo "❌ Missing: $lib"
+                echo "Available .a files:"
+                find . -name "*.a" -type f || echo "No .a files found"
+                exit 1
+              fi
+            done
           fi
           
-          echo "✅ Build artifacts verified"
+          echo "✅ All required build artifacts verified"
         shell: bash
 
-      # === STEP 7: Frontend Build ===
+      # === STEP 7: Frontend Build (Simplified & Robust) ===
       - name: Install frontend dependencies
-        timeout-minutes: 8
+        timeout-minutes: 10
         run: |
           echo "Installing npm dependencies..."
-          npm ci --no-audit --no-fund
-          echo "✅ Dependencies installed"
-
-      - name: Verify TypeScript and build tools
-        run: |
-          echo "=== Verifying build tools ==="
-          echo "TypeScript version:"
-          npx tsc --version || echo "❌ TypeScript not found"
-          echo "ESLint version:"
-          npx eslint --version || echo "❌ ESLint not found"
-          echo "Vite version:"
-          npx vite --version || echo "❌ Vite not found"
-          echo "✅ Build tools verified"
+          if ! npm ci --no-audit --no-fund; then
+            echo "❌ npm ci failed"
+            exit 1
+          fi
+          echo "✅ Dependencies installed successfully"
         shell: bash
 
       - name: Build frontend
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
-          echo "Building frontend..."
-          echo "Step 1: Running TypeScript compilation..."
-          npx tsc
-          if [ $? -ne 0 ]; then
-            echo "❌ TypeScript compilation failed"
-            exit 1
-          fi
-          echo "✅ TypeScript compilation successful"
+          echo "=== Frontend Build ==="
           
-          echo "Step 2: Running Vite build..."
-          npx vite build
-          if [ $? -ne 0 ]; then
-            echo "❌ Vite build failed"
+          # Use npm script directly (most reliable)
+          if ! npm run build; then
+            echo "❌ Frontend build failed"
             exit 1
           fi
+          
+          # Verify build output
+          if [ ! -d "dist" ] || [ -z "$(ls -A dist 2>/dev/null)" ]; then
+            echo "❌ Frontend build output verification failed"
+            echo "Expected 'dist' directory with content"
+            ls -la . || true
+            exit 1
+          fi
+          
           echo "✅ Frontend build completed successfully"
+          echo "Build output: $(find dist -type f | wc -l) files in dist/"
         shell: bash
 
-      - name: Verify frontend build
-        run: |
-          if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
-            echo "✅ Frontend build output verified"
-            echo "Build output summary:"
-            ls -la dist/ | head -10
-            echo "Total files in dist: $(find dist -type f | wc -l)"
-          else
-            echo "❌ Frontend build failed - dist directory empty or missing"
-            exit 1
-          fi
-        shell: bash
-
-      # === STEP 8: Tauri Build ===
-      - name: Verify Tauri CLI
-        run: |
-          echo "Verifying Tauri CLI..."
-          npx tauri --version
-          echo "✅ Tauri CLI verified"
-        shell: bash
-
+      # === STEP 8: Tauri Build (Simplified) ===
       - name: Build Tauri application
-        timeout-minutes: 45
+        timeout-minutes: 60
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -220,34 +303,55 @@ jobs:
         with:
           args: ${{ matrix.args }}
 
-      # === STEP 9: Verify Build Output ===
+      # === STEP 9: Build Output Verification (Robust) ===
       - name: Verify build outputs
         run: |
-          echo "=== Verifying build outputs ==="
-          target_dir="src-tauri/target/${{ matrix.target }}/release/bundle"
+          echo "=== Build Output Verification ==="
+          
+          TARGET_DIR="src-tauri/target/${{ matrix.target }}/release/bundle"
+          
+          if [ ! -d "$TARGET_DIR" ]; then
+            echo "❌ Bundle directory not found: $TARGET_DIR"
+            echo "Available directories in target:"
+            find src-tauri/target -type d -name "bundle" 2>/dev/null || echo "No bundle directories found"
+            exit 1
+          fi
+          
+          # Platform-specific verification
+          FOUND_INSTALLER=false
           
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            if [ -d "$target_dir/msi" ] && [ "$(ls -A $target_dir/msi 2>/dev/null)" ]; then
-              echo "✅ Windows MSI found:"
-              ls -la "$target_dir/msi/"
-            else
-              echo "❌ Windows MSI not found"
+            # Check for MSI
+            if [ -d "$TARGET_DIR/msi" ] && [ -n "$(ls -A "$TARGET_DIR/msi" 2>/dev/null)" ]; then
+              echo "✅ Windows MSI installer found:"
+              ls -la "$TARGET_DIR/msi/"
+              FOUND_INSTALLER=true
             fi
             
-            if [ -d "$target_dir/nsis" ] && [ "$(ls -A $target_dir/nsis 2>/dev/null)" ]; then
+            # Check for NSIS
+            if [ -d "$TARGET_DIR/nsis" ] && [ -n "$(ls -A "$TARGET_DIR/nsis" 2>/dev/null)" ]; then
               echo "✅ Windows NSIS installer found:"
-              ls -la "$target_dir/nsis/"
-            else
-              echo "⚠️  Windows NSIS installer not found (may be disabled)"
+              ls -la "$TARGET_DIR/nsis/"
+              FOUND_INSTALLER=true
             fi
+            
           else
-            if [ -d "$target_dir/dmg" ] && [ "$(ls -A $target_dir/dmg 2>/dev/null)" ]; then
+            # Check for DMG
+            if [ -d "$TARGET_DIR/dmg" ] && [ -n "$(ls -A "$TARGET_DIR/dmg" 2>/dev/null)" ]; then
               echo "✅ macOS DMG found:"
-              ls -la "$target_dir/dmg/"
-            else
-              echo "❌ macOS DMG not found"
+              ls -la "$TARGET_DIR/dmg/"
+              FOUND_INSTALLER=true
             fi
           fi
+          
+          if [ "$FOUND_INSTALLER" = false ]; then
+            echo "❌ No installer packages found"
+            echo "Bundle directory contents:"
+            ls -la "$TARGET_DIR/" || echo "Bundle directory is empty"
+            exit 1
+          fi
+          
+          echo "✅ Build output verification successful"
         shell: bash
 
       # === STEP 10: Upload Artifacts ===
@@ -260,25 +364,81 @@ jobs:
             src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
             src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
           retention-days: 30
+          if-no-files-found: ignore
 
-      # === STEP 11: Debug Information (On Failure) ===
+      # === STEP 11: Enhanced Debug Information (On Failure) ===
       - name: Debug build failure
         if: failure()
         run: |
-          echo "=== Build Failure Debug Information ==="
-          echo "Current directory: $(pwd)"
-          echo "Available files:"
+          echo "=============================================="
+          echo "         BUILD FAILURE DEBUG REPORT"
+          echo "=============================================="
+          
+          echo -e "\n=== Environment ==="
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Target: ${{ matrix.target }}"
+          echo "PWD: $(pwd)"
+          echo "Date: $(date)"
+          
+          echo -e "\n=== System Information ==="
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            systeminfo | head -10 || echo "systeminfo not available"
+          else
+            uname -a
+            [ -f /etc/os-release ] && cat /etc/os-release || echo "OS release info not available"
+          fi
+          
+          echo -e "\n=== Directory Structure ==="
           ls -la
-          echo "Target directory:"
-          ls -la src-tauri/target/ 2>/dev/null || echo "Target directory not found"
-          echo "Node modules:"
-          ls -la node_modules/.bin/ 2>/dev/null | grep -i tauri || echo "Tauri not found in node_modules"
-          echo "Environment:"
-          env | grep -E "(RUST|NODE|NPM|PATH)" | head -10
-          echo "=== End Debug Info ==="
+          
+          echo -e "\n=== src-tauri Structure ==="
+          if [ -d "src-tauri" ]; then
+            find src-tauri -type f -name "Cargo.toml" -o -name "*.rs" | head -10
+            if [ -d "src-tauri/target" ]; then
+              echo "Target directory size: $(du -sh src-tauri/target 2>/dev/null || echo 'unknown')"
+              find src-tauri/target -type d -name "bundle" 2>/dev/null || echo "No bundle directories"
+            fi
+          fi
+          
+          echo -e "\n=== whisper.cpp Status ==="
+          if [ -d "src-tauri/lib/whisper.cpp" ]; then
+            ls -la src-tauri/lib/whisper.cpp/
+            if [ -d "src-tauri/lib/whisper.cpp/build" ]; then
+              echo "Build directory contents:"
+              ls -la src-tauri/lib/whisper.cpp/build/
+            fi
+          fi
+          
+          echo -e "\n=== Frontend Status ==="
+          if [ -d "dist" ]; then
+            echo "Dist directory: $(find dist -type f | wc -l) files"
+            ls -la dist/ | head -5
+          else
+            echo "Dist directory not found"
+          fi
+          
+          echo -e "\n=== Node/NPM Status ==="
+          if [ -d "node_modules" ]; then
+            echo "node_modules exists"
+            ls -la node_modules/.bin/ | head -5 || echo "No .bin directory"
+          else
+            echo "node_modules not found"
+          fi
+          
+          echo -e "\n=== Cargo/Rust Status ==="
+          cargo --version 2>/dev/null || echo "Cargo not found"
+          rustc --version 2>/dev/null || echo "Rustc not found"
+          
+          echo -e "\n=== Recent Logs ==="
+          if [ -f "$HOME/.npm/_logs"/*.log ]; then
+            echo "Recent NPM logs:"
+            tail -20 "$HOME/.npm/_logs"/*.log 2>/dev/null || echo "No NPM logs"
+          fi
+          
+          echo "=============================================="
         shell: bash
 
-  # === RELEASE JOB ===
+  # === RELEASE JOB (Unchanged) ===
   release:
     needs: build
     runs-on: ubuntu-latest
