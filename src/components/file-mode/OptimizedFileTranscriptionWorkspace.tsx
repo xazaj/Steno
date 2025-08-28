@@ -574,6 +574,7 @@ const OptimizedFileTranscriptionWorkspace: React.FC<OptimizedFileTranscriptionWo
                 >
                   <option value="zh">中文</option>
                   <option value="en">English</option>
+                  <option value="id">Bahasa Indonesia (印尼语)</option>
                   <option value="auto">自动检测</option>
                 </select>
               </div>
@@ -734,7 +735,7 @@ const OptimizedFileTranscriptionWorkspace: React.FC<OptimizedFileTranscriptionWo
               <span className="text-sm font-medium text-blue-900">配置概览</span>
             </div>
             <div className="text-xs text-blue-700 space-y-1">
-              <div>语言: {modelConfig.language === 'zh' ? '中文' : modelConfig.language === 'en' ? '英文' : '自动检测'}</div>
+              <div>语言: {modelConfig.language === 'zh' ? '中文' : modelConfig.language === 'en' ? '英文' : modelConfig.language === 'id' ? '印尼语' : '自动检测'}</div>
               <div>质量: {modelConfig.mode === 'standard' ? '标准' : '高精度'}</div>
               <div>预处理: {Object.values(audioConfig).filter(Boolean).length} 项启用</div>
               <div>线程数: {modelConfig.n_threads}</div>

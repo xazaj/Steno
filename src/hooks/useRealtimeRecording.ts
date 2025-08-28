@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
 export interface RealtimeConfig {
-  language: 'zh' | 'en' | 'auto';
+  language: 'zh' | 'en' | 'auto' | 'id';
   mode: 'streaming' | 'buffered' | 'hybrid';
   speakerDiarization: boolean;
   noiseReduction: boolean;

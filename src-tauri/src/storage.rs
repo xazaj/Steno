@@ -323,7 +323,7 @@ impl StorageService {
         );
         
         if let Ok(c) = count {
-            if c >= 6 {
+            if c >= 1 {
                 // 已经有新的内置提示词，跳过初始化
                 return Ok(());
             }
@@ -336,31 +336,51 @@ impl StorageService {
         )?;
         let built_in_prompts = vec![
             PromptTemplate {
-                id: "builtin_finance_investment".to_string(),
-                name: "金融投资策略会议".to_string(),
+                id: "builtin_banking_universal".to_string(),
+                name: "银行业务通用场景".to_string(),
                 content: r#"# --- Whisper 上下文感知提示词 ---
 
 ## 1. 场景与领域声明
-这是一场关于全球宏观经济形势的季度投资策略电话会议，内容聚焦于利率政策、市场风险和资产配置，语言风格专业、数据驱动。
+这是银行业务相关的会议或讨论场景，涵盖贷款业务、存款产品、金融产品设计、用户体验优化、业务模式创新等多个方面，语言风格专业规范，术语丰富。
 
 ## 2. 核心术语与专有名词
-### 2.1 人名/机构名/产品名
-* 鲍威尔 (Jerome Powell), 耶伦 (Janet Yellen)
-* 美联储 (The Federal Reserve, The Fed), 欧洲央行 (ECB), 高盛 (Goldman Sachs), 摩根士丹利 (Morgan Stanley)
-* 纳斯达克指数 (NASDAQ), 标普500指数 (S&P 500)
-* 交易所交易基金 (Exchange-Traded Fund, ETF), 量化对冲基金 (Quantitative Hedge Fund)
+### 2.1 人名/职位/机构名
+* 行长 (President), 副行长 (Vice President), 风控总监 (Chief Risk Officer, CRO)
+* 产品经理 (Product Manager), 交互设计师 (UX/UI Designer), 业务分析师 (Business Analyst)
+* 中国人民银行 (People's Bank of China, PBOC), 银保监会 (CBIRC), 央行 (Central Bank)
+* 工商银行 (ICBC), 建设银行 (CCB), 招商银行 (CMB), 平安银行 (PAB)
 
-### 2.2 行业术语/专业词汇
-* 量化宽松 (Quantitative Easing, QE), 缩减购债 (Tapering), 加息周期 (Rate Hike Cycle)
-* 收益率曲线 (Yield Curve), 通货膨胀 (Inflation), 通货紧缩 (Deflation)
-* 阿尔法收益 (Alpha), 贝塔系数 (Beta), 夏普比率 (Sharpe Ratio)
-* 宏观经济 (Macroeconomics), 非农就业数据 (Non-Farm Payrolls, NFP)
-* 风险敞口 (Risk Exposure), 黑天鹅事件 (Black Swan Event)
+### 2.2 业务术语/产品名词
+#### 贷款业务
+* 个人住房贷款 (Personal Housing Loan), 企业信贷 (Corporate Credit), 消费贷款 (Consumer Loan)
+* 抵押贷款 (Mortgage Loan), 信用贷款 (Unsecured Loan), 担保贷款 (Guaranteed Loan)
+* 贷款利率 (Loan Interest Rate), 年化利率 (Annual Percentage Rate, APR), 等额本息 (Equal Principal and Interest)
+* 风险评级 (Risk Rating), 征信记录 (Credit Record), 还款能力 (Repayment Capacity)
+
+#### 存款产品
+* 活期存款 (Demand Deposit), 定期存款 (Time Deposit), 大额存单 (Certificate of Deposit, CD)
+* 结构性存款 (Structured Deposit), 智能存款 (Smart Deposit), 通知存款 (Call Deposit)
+* 存款准备金率 (Reserve Requirement Ratio, RRR), 存款保险 (Deposit Insurance)
+
+#### 产品设计与交互
+* 用户体验 (User Experience, UX), 用户界面 (User Interface, UI), 客户旅程 (Customer Journey)
+* 原型设计 (Prototyping), 可用性测试 (Usability Testing), A/B测试 (A/B Testing)
+* 移动银行 (Mobile Banking), 网上银行 (Online Banking), 数字化转型 (Digital Transformation)
+* 获客成本 (Customer Acquisition Cost, CAC), 客户生命周期价值 (Customer Lifetime Value, CLV)
+
+#### 业务模式与风控
+* 零售银行 (Retail Banking), 对公业务 (Corporate Banking), 投资银行 (Investment Banking)
+* 普惠金融 (Inclusive Finance), 开放银行 (Open Banking), 金融科技 (FinTech)
+* 合规管理 (Compliance Management), 反洗钱 (Anti-Money Laundering, AML), 了解你的客户 (Know Your Customer, KYC)
+* 压力测试 (Stress Testing), 资本充足率 (Capital Adequacy Ratio), 不良贷款率 (Non-Performing Loan Ratio, NPL)
 
 ### 2.3 特定概念或口头禅
-* 穿越牛熊周期 (To navigate through bull and bear cycles)
-* 市场的非理性繁荣 (Irrational exuberance of the market)
-* 寻求结构性机会 (Seeking structural opportunities)
+* 以客户为中心 (Customer-centric approach)
+* 风险与收益并存 (Risk and return coexist)
+* 数据驱动决策 (Data-driven decision making)
+* 敏捷响应市场需求 (Agile response to market demands)
+* 合规经营，稳健发展 (Compliant operation, steady development)
+* 提升用户体验，创造价值 (Enhance user experience and create value)
 
 ## 3. 格式化要求示例
 * 标点类型: 全角标点
@@ -371,221 +391,8 @@ impl StorageService {
                 category: "general".to_string(),
                 language: "zh".to_string(),
                 is_built_in: true,
-                description: Some("适用于金融行业投资策略会议、财经分析等场景的专业提示词".to_string()),
-                tags: vec!["金融".to_string(), "投资".to_string(), "宏观经济".to_string(), "资产配置".to_string()],
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
-                usage_count: 0,
-                is_active: false,
-            },
-            PromptTemplate {
-                id: "builtin_medical_clinical".to_string(),
-                name: "医疗临床研究会议".to_string(),
-                content: r#"# --- Whisper 上下文感知提示词 ---
-
-## 1. 场景与领域声明
-这是一场关于新型抗肿瘤药物 KL-281 的三期临床试验数据揭盲和研讨会，内容涉及药代动力学、疗效与安全性，术语非常专业。
-
-## 2. 核心术语与专有名词
-### 2.1 人名/机构名/产品名
-* 李明博士 (Dr. Li Ming), 临床研究负责人 (Principal Investigator, PI)
-* 辉瑞 (Pfizer), 阿斯利康 (AstraZeneca)
-* 美国食品药品监督管理局 (Food and Drug Administration, FDA), 国家药品监督管理局 (NMPA)
-* 泰瑞沙 (Tagrisso), 可瑞达 (Keytruda, K药)
-
-### 2.2 行业术语/专业词汇
-* 临床试验 (Clinical Trial), 双盲随机对照试验 (Double-Blind Randomized Controlled Trial, RCT)
-* 肿瘤免疫学 (Immuno-Oncology), 靶向治疗 (Targeted Therapy), 细胞凋亡 (Apoptosis)
-* 总生存期 (Overall Survival, OS), 无进展生存期 (Progression-Free Survival, PFS)
-* 药代动力学 (Pharmacokinetics, PK), 药效学 (Pharmacodynamics, PD)
-* 不良事件 (Adverse Event, AE), 适应症 (Indication)
-
-### 2.3 特定概念或口头禅
-* 改善患者预后 (To improve patient outcomes)
-* 具有统计学显著性差异 (Statistically significant difference)
-* 安全性和耐受性良好 (Good safety and tolerability profile)
-
-## 3. 格式化要求示例
-* 标点类型: 全角标点
-* 分段方式: 问答格式
-* 预览效果: 今天的会议很重要，请大家准时参加。
-
-# --- 提示词结束 ---"#.to_string(),
-                category: "medical".to_string(),
-                language: "zh".to_string(),
-                is_built_in: true,
-                description: Some("适用于医疗健康行业的临床研究、药物开发等专业会议场景".to_string()),
-                tags: vec!["医疗".to_string(), "临床试验".to_string(), "药物研发".to_string(), "生物医学".to_string()],
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
-                usage_count: 0,
-                is_active: false,
-            },
-            PromptTemplate {
-                id: "builtin_ai_tech_forum".to_string(),
-                name: "AI技术伦理论坛".to_string(),
-                content: r#"# --- Whisper 上下文感知提示词 ---
-
-## 1. 场景与领域声明
-这是一场关于多模态大语言模型技术伦理与对齐方法的高峰论坛，内容围绕模型的可解释性和安全性展开，技术概念密集。
-
-## 2. 核心术语与专有名词
-### 2.1 人名/机构名/产品名
-* 杨立昆 (Yann LeCun), 吴恩达 (Andrew Ng)
-* OpenAI, DeepMind, Anthropic, Hugging Face
-* GPT-4 (Generative Pre-trained Transformer 4), Gemini, LLaMA (Large Language Model Meta AI)
-* Transformer架构, PyTorch, TensorFlow
-
-### 2.2 行业术语/专业词汇
-* 大语言模型 (Large Language Model, LLM), 多模态 (Multimodal)
-* 生成式对抗网络 (Generative Adversarial Network, GAN)
-* 从人类反馈中强化学习 (Reinforcement Learning from Human Feedback, RLHF)
-* 模型幻觉 (Hallucination), 模型对齐 (Model Alignment), 可解释性AI (Explainable AI, XAI)
-* 提示词工程 (Prompt Engineering), 微调 (Fine-tuning), 推理 (Inference)
-
-### 2.3 特定概念或口头禅
-* 涌现能力 (Emergent Abilities)
-* 负责任的人工智能 (Responsible AI)
-* 通用人工智能 (Artificial General Intelligence, AGI)
-
-## 3. 格式化要求示例
-* 标点类型: 全角标点
-* 分段方式: 问答格式
-* 预览效果: 今天的会议很重要，请大家准时参加。
-
-# --- 提示词结束 ---"#.to_string(),
-                category: "technical".to_string(),
-                language: "zh".to_string(),
-                is_built_in: true,
-                description: Some("适用于人工智能、机器学习技术讨论和学术论坛等场景".to_string()),
-                tags: vec!["AI".to_string(), "机器学习".to_string(), "大语言模型".to_string(), "技术伦理".to_string()],
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
-                usage_count: 0,
-                is_active: false,
-            },
-            PromptTemplate {
-                id: "builtin_nba_analysis".to_string(),
-                name: "NBA赛后复盘分析".to_string(),
-                content: r#"# --- Whisper 上下文感知提示词 ---
-
-## 1. 场景与领域声明
-这是一场关于 NBA 季后赛关键场次的赛后复盘分析直播节目，包含大量篮球战术术语、球员昵称和高语速评论。
-
-## 2. 核心术语与专有名词
-### 2.1 人名/机构名/产品名
-* 勒布朗·詹姆斯 (LeBron James), 斯蒂芬·库里 (Stephen Curry), 约基奇 (Nikola Jokić)
-* 洛杉矶湖人队 (Los Angeles Lakers), 金州勇士队 (Golden State Warriors)
-* NBA (National Basketball Association), 国际篮联 (FIBA)
-* ESPN, TNT
-
-### 2.2 行业术语/专业词汇
-* 挡拆战术 (Pick and Roll), 无球跑动 (Off-ball movement), 全场紧逼 (Full-court press)
-* 攻防转换 (Transition offense/defense), 低位单打 (Post-up)
-* 三分球 (Three-pointer), 罚球 (Free throw), 盖帽 (Block), 抢断 (Steal)
-* 常规赛最有价值球员 (Most Valuable Player, MVP), 总决赛 (The Finals)
-
-### 2.3 特定概念或口头禅
-* 打出了统治级的表现 (Delivered a dominant performance)
-* 关键时刻的英雄球 (Clutch shot in the crucial moment)
-* 防守赢得总冠军 (Defense wins championships)
-
-## 3. 格式化要求示例
-* 标点类型: 全角标点
-* 分段方式: 问答格式
-* 预览效果: 今天的会议很重要，请大家准时参加。
-
-# --- 提示词结束 ---"#.to_string(),
-                category: "general".to_string(),
-                language: "zh".to_string(),
-                is_built_in: true,
-                description: Some("适用于体育赛事解说、赛后分析和体育节目等场景".to_string()),
-                tags: vec!["体育".to_string(), "NBA".to_string(), "篮球".to_string(), "赛事解说".to_string()],
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
-                usage_count: 0,
-                is_active: false,
-            },
-            PromptTemplate {
-                id: "builtin_k12_education".to_string(),
-                name: "K12教育改革研讨会".to_string(),
-                content: r#"# --- Whisper 上下文感知提示词 ---
-
-## 1. 场景与领域声明
-这是一场关于K12阶段教育改革与未来核心素养培养的学术研讨会，内容探讨混合式教学与评价体系创新，教育理论词汇较多。
-
-## 2. 核心术语与专有名词
-### 2.1 人名/机构名/产品名
-* 杜威 (John Dewey), 皮亚杰 (Jean Piaget), 维果茨基 (Lev Vygotsky)
-* 北京师范大学 (Beijing Normal University), 可汗学院 (Khan Academy), Coursera
-* PISA测试 (Programme for International Student Assessment)
-* 部编版教材
-
-### 2.2 行业术语/专业词汇
-* 核心素养 (Core Competencies), 批判性思维 (Critical Thinking)
-* 探究式学习 (Inquiry-Based Learning), 项目制学习 (Project-Based Learning, PBL)
-* 混合式教学 (Blended Learning), 翻转课堂 (Flipped Classroom)
-* 形成性评价 (Formative Assessment), 终结性评价 (Summative Assessment)
-* 素质教育 (Holistic Education), 因材施教 (Personalized education)
-
-### 2.3 特定概念或口头禅
-* 以学生为中心 (Student-centered approach)
-* 培养终身学习者 (Cultivating lifelong learners)
-* 打破学科壁垒 (Breaking down subject silos)
-
-## 3. 格式化要求示例
-* 标点类型: 全角标点
-* 分段方式: 问答格式
-* 预览效果: 今天的会议很重要，请大家准时参加。
-
-# --- 提示词结束 ---"#.to_string(),
-                category: "general".to_string(),
-                language: "zh".to_string(),
-                is_built_in: true,
-                description: Some("适用于教育行业的学术研讨、教学改革和素养培养等场景".to_string()),
-                tags: vec!["教育".to_string(), "K12".to_string(), "教学改革".to_string(), "核心素养".to_string()],
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
-                usage_count: 0,
-                is_active: false,
-            },
-            PromptTemplate {
-                id: "builtin_business_meeting".to_string(),
-                name: "通用商务项目会议".to_string(),
-                content: r#"# --- Whisper 上下文感知提示词 ---
-
-## 1. 场景与领域声明
-这是一次跨部门的公司项目周会，内容主要是同步项目进展、讨论现有问题和明确下一步行动计划，语言风格为商务会话。
-
-## 2. 核心术语与专有名词
-### 2.1 人名/机构名/产品名
-* 张三 (Zhang San), 李四 (Li Si), 项目经理 (Project Manager), 产品负责人 (Product Owner)
-* 市场部 (Marketing Dept.), 研发部 (R&D Dept.), 财务部 (Finance Dept.)
-* Zoom, Microsoft Teams, Slack, Jira, Confluence
-
-### 2.2 行业术语/专业词汇
-* 关键绩效指标 (Key Performance Indicator, KPI), 投资回报率 (Return on Investment, ROI)
-* 利益相关者 (Stakeholders), 里程碑 (Milestone), 可交付成果 (Deliverables)
-* 路线图 (Roadmap), 时间线 (Timeline), 瓶颈 (Bottleneck)
-* 复盘 (Review), 头脑风暴 (Brainstorming), 协同效应 (Synergy)
-* 敏捷开发 (Agile Development), 瀑布模型 (Waterfall Model)
-
-### 2.3 特定概念或口头禅
-* 我们对齐一下信息 (Let's align on this / Let's sync up)
-* 确保这个事情形成闭环 (Ensure this issue is closed-loop)
-* 下一步的行动点是什么 (What are the next action items?)
-
-## 3. 格式化要求示例
-* 标点类型: 全角标点
-* 分段方式: 问答格式
-* 预览效果: 今天的会议很重要，请大家准时参加。
-
-# --- 提示词结束 ---"#.to_string(),
-                category: "meeting".to_string(),
-                language: "zh".to_string(),
-                is_built_in: true,
-                description: Some("适用于通用商务会议、项目讨论和跨部门协作等场景".to_string()),
-                tags: vec!["商务".to_string(), "项目管理".to_string(), "会议".to_string(), "协作".to_string()],
+                description: Some("适用于银行业务会议、贷款存款业务讨论、产品设计、交互优化、业务模式创新等场景的通用专业提示词".to_string()),
+                tags: vec!["银行".to_string(), "金融".to_string(), "贷款".to_string(), "存款".to_string(), "产品设计".to_string(), "交互设计".to_string(), "业务模式".to_string()],
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
                 usage_count: 0,
@@ -600,7 +407,6 @@ impl StorageService {
 
         Ok(())
     }
-
 
     /// 保存提示词模板
     pub fn save_prompt_template(&self, prompt: &PromptTemplate) -> Result<()> {

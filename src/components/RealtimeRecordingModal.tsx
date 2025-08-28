@@ -24,7 +24,7 @@ interface RealtimeRecordingModalProps {
 }
 
 interface RealtimeConfig {
-  language: 'zh' | 'en' | 'auto';
+  language: 'zh' | 'en' | 'auto' | 'id';
   mode: 'streaming' | 'buffered' | 'hybrid';
   speakerDiarization: boolean;
   noiseReduction: boolean;

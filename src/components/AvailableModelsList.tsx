@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowDownTrayIcon, CheckIcon, CloudIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, CheckIcon, CloudIcon, StarIcon } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
 interface AvailableModel {
   name: string;
@@ -8,6 +9,7 @@ interface AvailableModel {
   description: string;
   languages: string;
   quality: string;
+  recommended?: boolean;
 }
 
 interface ModelInfo {
@@ -72,14 +74,31 @@ const AvailableModelsList: React.FC<AvailableModelsListProps> = ({
           return (
             <div
               key={model.name}
-              className="p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+              className={`
+                p-3 rounded-lg border transition-all duration-300 relative overflow-hidden
+                ${model.recommended 
+                  ? 'border-amber-400 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 shadow-lg shadow-amber-500/20 ring-2 ring-amber-200' 
+                  : 'border-gray-200 bg-white hover:bg-gray-50'}
+              `}
             >
+              {/* 推荐模型的装饰性角标 */}
+              {model.recommended && (
+                <div className="absolute top-2 right-2 flex items-center justify-center w-8 h-8 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full shadow-lg transform rotate-12 hover:rotate-0 transition-transform duration-300">
+                  <StarIconSolid className="w-4 h-4 text-white" />
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-gray-800">
                       {model.name}
                     </span>
+                    {model.recommended && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold rounded-full shadow-md">
+                        <StarIconSolid className="w-3 h-3" />
+                        <span>推荐</span>
+                      </div>
+                    )}
                     <span className={`
                       px-2 py-1 text-xs rounded-full font-medium
                       ${getQualityColor(model.quality)}

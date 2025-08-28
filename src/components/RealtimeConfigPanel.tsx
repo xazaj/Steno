@@ -12,7 +12,7 @@ import {
 import { cn } from '../utils/cn';
 
 interface RealtimeConfig {
-  language: 'zh' | 'en' | 'auto';
+  language: 'zh' | 'en' | 'auto' | 'id';
   mode: 'streaming' | 'buffered' | 'hybrid';
   speakerDiarization: boolean;
   noiseReduction: boolean;
@@ -88,10 +88,11 @@ const RealtimeConfigPanel: React.FC<RealtimeConfigPanelProps> = ({
               </label>
               <p className="text-sm text-gray-600">选择要进行语音识别的语言类型</p>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {[
                 { value: 'zh' as const, label: '中文', icon: '🇨🇳', desc: '普通话/方言' },
                 { value: 'en' as const, label: 'English', icon: '🇺🇸', desc: '美式英语' },
+                { value: 'id' as const, label: 'Bahasa Indonesia', icon: '🇮🇩', desc: '印尼语' },
                 { value: 'auto' as const, label: '智能检测', icon: '🌐', desc: '自动识别' }
               ].map((lang) => (
                 <button

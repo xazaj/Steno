@@ -8,6 +8,7 @@ import {
   SparklesIcon 
 } from '@heroicons/react/24/outline';
 import { cn } from '../utils/cn';
+import { ComingSoonModal } from './ComingSoonModal';
 
 // Shared components
 import SharedSidebar from './shared/SharedSidebar';
@@ -38,6 +39,7 @@ const DualModeApp: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   const { toasts, removeToast, info } = useToast();
 
   // Mock projects data
@@ -91,6 +93,12 @@ const DualModeApp: React.FC = () => {
   // 模式切换处理
   const handleModeSwitch = (mode: AppMode, reason?: string) => {
     if (mode === currentMode) return;
+    
+    // 如果是录音模式，显示Coming Soon弹窗
+    if (mode === 'recording') {
+      setShowComingSoonModal(true);
+      return;
+    }
     
     setCurrentMode(mode);
     
@@ -295,6 +303,13 @@ const DualModeApp: React.FC = () => {
 
       {/* Toast Notifications */}
       <Toast toasts={toasts} onRemove={removeToast} />
+      
+      {/* Coming Soon Modal */}
+      <ComingSoonModal 
+        isOpen={showComingSoonModal}
+        onClose={() => setShowComingSoonModal(false)}
+        feature="实时录音功能"
+      />
     </div>
   );
 };

@@ -44,7 +44,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["dmg", "msi", "nsis"],
+    "targets": ["dmg"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -55,15 +55,15 @@
     "resources": [],
     "externalBin": [],
     "shortDescription": "AI语音识别应用",
-    "longDescription": "基于OpenAI Whisper的现代化AI语音识别桌面应用，支持多种音频格式和语言识别。",
+    "longDescription": "基于OpenAI Whisper的现代化AI语音识别桌面应用，支持多种音频格式和语言识别。需要macOS 10.15或更高版本。",
     "copyright": "Copyright © 2025 Steno. All rights reserved.",
     "macOS": {
-      "entitlements": "entitlements.plist",
+      "entitlements": null,
       "exceptionDomain": "",
       "frameworks": [],
       "providerShortName": null,
       "signingIdentity": "-",
-      "minimumSystemVersion": "11.0",
+      "minimumSystemVersion": "10.15",
       "dmg": {
         "appPosition": {
           "x": 180,

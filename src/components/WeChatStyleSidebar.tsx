@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   MicrophoneIcon,
   ArrowUpTrayIcon,
@@ -17,6 +17,7 @@ import {
   QueueListIcon as QueueListIconSolid,
   SparklesIcon as SparklesIconSolid
 } from '@heroicons/react/24/solid';
+import { ComingSoonModal } from './ComingSoonModal';
 
 interface SidebarItem {
   id: string;
@@ -52,6 +53,7 @@ const WeChatStyleSidebar: React.FC<WeChatStyleSidebarProps> = ({
   onShowPromptSidebar,
   onShowModelManager
 }) => {
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   const sidebarItems: SidebarItem[] = [
     {
       id: 'transcriptions',
@@ -72,7 +74,7 @@ const WeChatStyleSidebar: React.FC<WeChatStyleSidebarProps> = ({
       label: '实时录音',
       icon: MicrophoneIcon,
       activeIcon: MicrophoneIconSolid,
-      onClick: onStartRecording
+      onClick: () => setShowComingSoonModal(true)
     },
     {
       id: 'prompt-manager',
@@ -202,6 +204,13 @@ const WeChatStyleSidebar: React.FC<WeChatStyleSidebarProps> = ({
           </button>
         </div>
       </div>
+      
+      {/* Coming Soon Modal */}
+      <ComingSoonModal 
+        isOpen={showComingSoonModal}
+        onClose={() => setShowComingSoonModal(false)}
+        feature="实时录音功能"
+      />
     </div>
   );
 };

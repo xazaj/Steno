@@ -520,6 +520,7 @@ const CompactFileTranscriptionWorkspace: React.FC<CompactFileTranscriptionWorksp
                   >
                     <option value="en">English (推荐)</option>
                     <option value="zh">中文</option>
+                    <option value="id">Bahasa Indonesia (印尼语)</option>
                     <option value="auto">自动检测</option>
                   </select>
                 </div>

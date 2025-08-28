@@ -4,7 +4,7 @@ import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
 // 新的优化配置接口
 export interface OptimalRealtimeConfig {
-  language: 'zh' | 'en' | 'auto';
+  language: 'zh' | 'en' | 'auto' | 'id';
   enableSpeakerDiarization: boolean;
   enableContextAwareness: boolean;
   qualityThreshold: number;

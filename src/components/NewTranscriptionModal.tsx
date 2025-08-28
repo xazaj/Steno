@@ -320,6 +320,11 @@ const NewTranscriptionModal: React.FC<NewTranscriptionModalProps> = ({
       value: 'en', 
       label: 'English', 
       description: '英语（美式、英式）'
+    },
+    { 
+      value: 'id', 
+      label: 'Bahasa Indonesia', 
+      description: '印尼语'
     }
   ];
 

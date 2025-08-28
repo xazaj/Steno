@@ -7,18 +7,18 @@
 A modern, cross-platform desktop application for high-accuracy speech-to-text transcription, powered by OpenAI Whisper and built with Tauri + React.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/your-username/steno/ci.yml?branch=main)](https://github.com/your-username/steno/actions)
-[![Release Version](https://img.shields.io/github/v/release/your-username/steno)](https://github.com/your-username/steno/releases)
-[![Downloads](https://img.shields.io/github/downloads/your-username/steno/total)](https://github.com/your-username/steno/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/xazaj/Steno/ci.yml?branch=main)](https://github.com/xazaj/Steno/actions)
+[![Release Version](https://img.shields.io/github/v/release/xazaj/Steno)](https://github.com/xazaj/Steno/releases)
+[![Downloads](https://img.shields.io/github/downloads/xazaj/Steno/total)](https://github.com/xazaj/Steno/releases)
 
-[![Platform Support](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](#installation)
+[![Platform Support](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#installation)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg?logo=react&logoColor=white)](https://reactjs.org/)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-000000.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131.svg?logo=tauri&logoColor=white)](https://tauri.app/)
 
 ---
 
-[**Download**](https://github.com/your-username/steno/releases) · [**Documentation**](https://github.com/your-username/steno/wiki) · [**Report Bug**](https://github.com/your-username/steno/issues) · [**Request Feature**](https://github.com/your-username/steno/issues)
+[**Download**](https://github.com/xazaj/Steno/releases) · [**Documentation**](https://github.com/xazaj/Steno/wiki) · [**Report Bug**](https://github.com/xazaj/Steno/issues) · [**Request Feature**](https://github.com/xazaj/Steno/issues) · [**中文**](README_CN.md)
 
 </div>
 
@@ -30,9 +30,9 @@ Steno is a sophisticated desktop application that transforms audio into accurate
 
 - **Advanced Audio Processing** - Support for MP3, WAV, FLAC, OGG, AAC, M4A, WMA with intelligent format conversion
 - **Real-time Transcription** - Live audio capture with simultaneous speech recognition
-- **Multi-language Support** - Optimized for Chinese and English with automatic language detection
+- **Multi-language Support** - Optimized for Chinese, English, and Indonesian with automatic language detection
 - **AI Model Flexibility** - Choose from Tiny (39MB), Base (74MB), or Large v3 (1.5GB) Whisper models
-- **Cross-platform Performance** - Native application for macOS, Windows, and Linux
+- **Native macOS Performance** - Optimized desktop application for macOS
 - **Apple Silicon Optimization** - Metal GPU acceleration on M1/M2/M3 Macs
 
 ## Installation
@@ -41,9 +41,7 @@ Steno is a sophisticated desktop application that transforms audio into accurate
 
 | Platform | Version | Architecture | Memory | Storage |
 |----------|---------|--------------|--------|---------|
-| **macOS** | 11.0+ | Intel / Apple Silicon | 8GB+ | 3GB+ |
-| **Windows** | 10+ | x64 | 8GB+ | 3GB+ |
-| **Linux** | Ubuntu 18.04+ | x64 | 8GB+ | 3GB+ |
+| **macOS** | 10.15+ | Apple Silicon (M1/M2/M3) | 4GB+ | 200MB+ |
 
 ### Quick Install
 
@@ -51,31 +49,12 @@ Steno is a sophisticated desktop application that transforms audio into accurate
 
 ```bash
 # Download and install
-curl -L -o Steno.dmg https://github.com/your-username/steno/releases/latest/download/Steno_aarch64.dmg
+curl -L -o Steno.dmg https://github.com/xazaj/Steno/releases/download/v1.0.0/Steno_1.0.0_aarch64.dmg
 open Steno.dmg
 
 # Configure permissions (required for unsigned apps)
 xattr -rd com.apple.quarantine "/Applications/Steno.app"
 codesign --force --deep --sign - "/Applications/Steno.app"
-```
-
-#### Windows
-
-```powershell
-# Download and install MSI package
-Invoke-WebRequest -Uri "https://github.com/your-username/steno/releases/latest/download/Steno_x64.msi" -OutFile "Steno.msi"
-Start-Process -FilePath "Steno.msi" -Wait
-```
-
-#### Linux
-
-```bash
-# Ubuntu/Debian
-wget https://github.com/your-username/steno/releases/latest/download/steno_amd64.deb
-sudo dpkg -i steno_amd64.deb
-
-# Arch Linux
-yay -S steno-bin
 ```
 
 ### First Launch Setup
@@ -110,6 +89,38 @@ Audio Input → Processing → AI Recognition → Text Output → Export
 - **Export Options** - Multiple formats including TXT, SRT, JSON, and Markdown
 - **Search & Organization** - Tag-based categorization with powerful filtering capabilities
 
+## Data Storage
+
+### Application Data Location
+
+```
+~/Library/Application Support/com.steno.app/
+├── database/
+│   └── steno.db                    # SQLite database (transcription records & settings)
+├── models/                         # Whisper AI model files
+│   ├── ggml-tiny.bin              # Tiny model (~39MB)
+│   ├── ggml-base.bin              # Base model (~142MB)
+│   └── ggml-large-v3.bin          # Large v3 model (~1.55GB)
+├── audio/
+│   ├── uploads/                    # User uploaded audio files
+│   └── temp/                       # Temporary audio files
+└── logs/                          # Application logs
+    └── app.log
+```
+
+### Data Management
+
+```bash
+# View application data
+open "~/Library/Application Support/com.steno.app/"
+
+# Backup database
+cp "~/Library/Application Support/com.steno.app/database/steno.db" ~/Desktop/steno_backup.db
+
+# Clean temporary files
+rm -rf "~/Library/Application Support/com.steno.app/audio/temp/"
+```
+
 ## Development
 
 ### Prerequisites
@@ -122,7 +133,7 @@ Audio Input → Processing → AI Recognition → Text Output → Export
 
 ```bash
 # Clone repository
-git clone https://github.com/your-username/steno.git
+git clone https://github.com/xazaj/Steno.git
 cd steno
 
 # Install dependencies
@@ -143,8 +154,6 @@ npm run tauri:build
 
 # Platform-specific builds
 npm run build:mac-m1      # Apple Silicon
-npm run build:mac-intel   # Intel Mac
-npm run build:windows     # Windows x64
 ```
 
 ### Project Architecture
@@ -205,10 +214,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Bug Reports**: [GitHub Issues](https://github.com/your-username/steno/issues)
-- **Feature Requests**: [GitHub Issues](https://github.com/your-username/steno/issues)
-- **Documentation**: [Project Wiki](https://github.com/your-username/steno/wiki)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/steno/discussions)
+- **Bug Reports**: [GitHub Issues](https://github.com/xazaj/Steno/issues)
+- **Feature Requests**: [GitHub Issues](https://github.com/xazaj/Steno/issues)
+- **Documentation**: [Project Wiki](https://github.com/xazaj/Steno/wiki)
+- **Discussions**: [GitHub Discussions](https://github.com/xazaj/Steno/discussions)
 
 ---
 

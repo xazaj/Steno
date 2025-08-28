@@ -5,7 +5,6 @@ import { CloudArrowDownIcon } from '@heroicons/react/24/outline';
 import InstalledModelsList from './InstalledModelsList';
 import AvailableModelsList from './AvailableModelsList';
 import ModelDownloadProgress from './ModelDownloadProgress';
-import ModelStorageInfo from './ModelStorageInfo';
 import LocalModelLoader from './LocalModelLoader';
 
 interface ModelInfo {
@@ -22,13 +21,9 @@ interface AvailableModel {
   description: string;
   languages: string;
   quality: string;
+  recommended?: boolean;
 }
 
-interface StorageInfo {
-  used_space: number;
-  total_space: number;
-  available_space: number;
-}
 
 interface DownloadProgress {
   model_name: string;
@@ -47,7 +42,8 @@ const ModelManagementPanel: React.FC = () => {
       url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin',
       description: 'Whisper Large V3 - 最高质量',
       languages: 'multilingual',
-      quality: 'highest'
+      quality: 'highest',
+      recommended: true
     },
     {
       name: 'ggml-large-v2',
@@ -90,13 +86,11 @@ const ModelManagementPanel: React.FC = () => {
       quality: 'minimal'
     }
   ]);
-  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadInstalledModels();
-    loadStorageInfo();
     
     const unlistenDownload = listen<DownloadProgress>('model_download_progress', (event) => {
       setDownloadProgress(event.payload);
@@ -119,14 +113,6 @@ const ModelManagementPanel: React.FC = () => {
     }
   };
 
-  const loadStorageInfo = async () => {
-    try {
-      const info = await invoke<StorageInfo>('get_storage_info');
-      setStorageInfo(info);
-    } catch (error) {
-      console.error('Failed to load storage info:', error);
-    }
-  };
 
   const handleDownloadModel = async (model: AvailableModel) => {
     try {
@@ -156,7 +142,6 @@ const ModelManagementPanel: React.FC = () => {
       setLoading(true);
       await invoke('delete_model', { modelPath });
       await loadInstalledModels();
-      await loadStorageInfo();
     } catch (error) {
       console.error('Failed to delete model:', error);
     } finally {
@@ -167,12 +152,10 @@ const ModelManagementPanel: React.FC = () => {
   const onDownloadComplete = () => {
     setDownloadProgress(null);
     loadInstalledModels();
-    loadStorageInfo();
   };
 
   const onLocalModelsLoaded = () => {
     loadInstalledModels();
-    loadStorageInfo();
   };
 
   return (
@@ -185,9 +168,6 @@ const ModelManagementPanel: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {storageInfo && (
-          <ModelStorageInfo storageInfo={storageInfo} />
-        )}
 
         {downloadProgress && (
           <ModelDownloadProgress 

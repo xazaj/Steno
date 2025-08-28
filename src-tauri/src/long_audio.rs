@@ -575,6 +575,7 @@ impl LongAudioProcessor {
         let mock_text = match config.language.as_str() {
             "zh" => format!("这是一个时长 {:.1} 秒的中文音频段的转录结果。内容包含了会议讨论、项目计划和技术方案的介绍。", segment_duration),
             "en" => format!("This is a transcription result for an audio segment of {:.1} seconds duration. The content includes meeting discussions, project planning and technical solution presentations.", segment_duration),
+            "id" => format!("Ini adalah hasil transkripsi untuk segmen audio berdurasi {:.1} detik. Konten mencakup diskusi rapat, perencanaan proyek dan presentasi solusi teknis.", segment_duration),
             _ => format!("Audio segment transcription result ({:.1}s): Meeting content with discussions about project planning and implementation details.", segment_duration),
         };
         
