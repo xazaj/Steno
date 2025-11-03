@@ -61,7 +61,7 @@ num_cpus = "1.16"
 # 实时音频捕获
 cpal = "0.15"
 # HTTP客户端用于模型下载
-reqwest = { version = "0.11", features = ["stream"] }
+reqwest = { version = "0.12", features = ["stream"] }
 futures-util = "0.3"
 # 系统目录获取
 dirs = "5.0"
